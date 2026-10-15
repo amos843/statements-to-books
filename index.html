@@ -531,7 +531,7 @@ main { padding-block: 24px 120px; }
     </ol>
     <h3>Cash basis only</h3>
     <p>Income and expenses are counted when money moves through these accounts. There are no receivables, payables, accruals, depreciation or inventory, and a loan payment isn't split into principal and interest unless you split it. The books are a starting point: review the categories before you rely on the numbers, and check with your accountant for tax or financial reporting.</p>
-    <p>The chart of accounts is set up for a sole proprietor who files Schedule C (Form 1040): each income and expense account carries a Schedule C line, and the Excel file has a Schedule C sheet that totals them. Your own income-tax payments and health insurance are not business expenses, so they are suggested as Owner Draws. This is bookkeeping support, not tax advice.</p>
+    <p>The chart of accounts is set up for a sole proprietor who files Schedule C (Form 1040): each income and expense account carries a Schedule C line, and the Excel file has a Schedule C sheet for each tax year that totals them. Your own income-tax payments and health insurance are not business expenses, so they are suggested as Owner Draws. This is bookkeeping support, not tax advice.</p>
     <h3>Using the Excel file</h3>
     <ul>
       <li>Start on the Overview: it shows the results, the checks (each must be 0) and what's left to review. Click a sheet name to go there.</li>
@@ -643,7 +643,7 @@ main { padding-block: 24px 120px; }
 (() => {
   'use strict';
   if (!document.documentElement.lang) document.documentElement.lang = 'en';   // the host wrapper has no lang (P5-4)
-  const APP_VERSION = '1.8';   // P10-2: footer, and the Overview sheet (P10-5)
+  const APP_VERSION = '1.9';   // P10-2: footer, and the Overview sheet (P10-5)
   document.getElementById('app-ver').textContent = 'v' + APP_VERSION;
 
   // ---------- App state (money in integer cents throughout) ----------
@@ -1619,6 +1619,7 @@ main { padding-block: 24px 120px; }
       for (const n of namesLongFirst) if (up.startsWith(n.toUpperCase() + ' ')) return { name: n, rest: d.slice(n.length).trim() };
       return null;
     };
+    const cycleEnds = new Map();   // page -> the cycle end printed on it (P13-4)
     const newPeriod = () => { cur = { ob: null, eb: null, obDate: null, ebDate: null, idx: periods.length }; periods.push(cur); section = null; last = null; return cur; };
     const warn = (l, msg) => warnings.push({ page: l.page, text: l.text.slice(0, 140), msg });
     const dateIso = (tok, l) => { const d = pdfDate(tok, ctx); if (d.error) { warn(l, d.error); return null; } return d.iso; };
@@ -1644,6 +1645,9 @@ main { padding-block: 24px 120px; }
       if (l.cells[0] && !isPdfDate(l.cells[0])) { const m = l.cells[0].match(RE_LEAD_DATE); if (m && !isPdfMoney(m[2])) l.cells = [m[1], m[2], ...l.cells.slice(1)]; }
       if (last && l.page !== last.page) last = null;
       // P2-3: opening / ending balance lines start or fill a period.
+      // P13-4: a card statement prints its cycle as "Jun 23, 2024 - Jul 23, 2024" and no date on the closing balance: that end is its date.
+      const cyc = l.text.match(/[A-Z][a-z]{2,8}\.?\s+\d{1,2},?\s+\d{4}\s*[-–]\s*([A-Z][a-z]{2,8}\.?\s+\d{1,2},?\s+\d{4})/);
+      if (cyc) { const d = pdfDate(cyc[1], ctx).iso; if (d) cycleEnds.set(l.page, d); }
       const ob = balanceOf(l, RE_OB), eb = !ob && balanceOf(l, RE_EB);
       if (ob) {
         if (!cur || cur.ob != null) newPeriod();
@@ -1652,7 +1656,7 @@ main { padding-block: 24px 120px; }
       }
       if (eb) {
         if (!cur || (cur.eb != null && raws.some(r => r.period === cur.idx))) newPeriod();
-        if (cur.eb == null) { cur.eb = eb; cur.ebDate = eb.dateText ? (pdfDate(eb.dateText.replace(/(\d),? (\d{4})$/, '$1, $2'), ctx).iso || null) : null; }
+        if (cur.eb == null) { cur.eb = eb; cur.ebDate = eb.dateText ? (pdfDate(eb.dateText.replace(/(\d),? (\d{4})$/, '$1, $2'), ctx).iso || null) : null; cur.ebPage = l.page; }
         last = null; continue;
       }
       // P2-2b: section headers set the sign and the exclusion zones.
@@ -1718,6 +1722,9 @@ main { padding-block: 24px 120px; }
       last = null;
     }
     if (pending) warn(pending.line, 'A dated line had no amount within 3 lines and was skipped.');
+    // P13-4: a closing balance with no date takes the cycle end printed on its page (else the only one printed in the file).
+    const ends = [...new Set(cycleEnds.values())];
+    for (const p of periods) if (p.eb && !p.ebDate) p.ebDate = cycleEnds.get(p.ebPage) || (ends.length === 1 ? ends[0] : null);
     return { cardLayout, period: per, periods, raws, warnings };
   }
 
@@ -1801,6 +1808,13 @@ main { padding-block: 24px 120px; }
     src.mapped = src.txns.length > 0;
   }
 
+  // P13-4 (D80): the date a statement's ending balance is as of. PDF: the latest period's closing-balance date (else its last row),
+  // or the last row when that is later. CSV/Excel: the last row (the file carries no closing date).
+  function stmtEnd(src) {
+    const last = src.txnStats && src.txnStats.last || null;
+    const per = src.periods && src.periods.length ? src.periods[src.periods.length - 1].end : null;
+    return [per, last].filter(Boolean).sort().pop() || null;
+  }
   // Shared stats (P1-5 shape) for grid and PDF sources.
   function txnStatsOf(src) {
     let inC = 0, outC = 0, nIn = 0, nOut = 0, first = null, last = null;
@@ -2252,7 +2266,7 @@ main { padding-block: 24px 120px; }
     ['L16a', 'Line 16a · Interest: mortgage (paid to banks)'], ['L16b', 'Line 16b · Interest: other'], ['L17', 'Line 17 · Legal and professional services'], ['L18', 'Line 18 · Office expense'],
     ['L19', 'Line 19 · Pension and profit-sharing plans'], ['L20a', 'Line 20a · Rent: vehicles, machinery, equipment'], ['L20b', 'Line 20b · Rent: other business property'],
     ['L21', 'Line 21 · Repairs and maintenance'], ['L22', 'Line 22 · Supplies'], ['L23', 'Line 23 · Taxes and licenses'], ['L24a', 'Line 24a · Travel'], ['L24b', 'Line 24b · Deductible meals (50%)'],
-    ['L25', 'Line 25 · Utilities'], ['L26', 'Line 26 · Wages'], ['L27a', 'Line 27a · Energy efficient commercial buildings'], ['V', 'Part V · Other expenses (line 27b)'],
+    ['L25', 'Line 25 · Utilities'], ['L26', 'Line 26 · Wages'], ['L27a', 'Energy efficient commercial buildings (line 27b on the 2023–24 form, 27a from 2025)'], ['V', 'Part V · Other expenses (line 48)'],
     ['L36', 'Line 36 · Purchases (cost of goods sold)'], ['L37', 'Line 37 · Cost of labor'], ['L38', 'Line 38 · Materials and supplies'], ['L39', 'Line 39 · Other costs'],
     ['X', 'Not on Schedule C'], ['U', 'Uncategorized (review)'],
   ];
@@ -2277,6 +2291,9 @@ main { padding-block: 24px 120px; }
   // The tag an account carries: its own, else (a setup file or import that has none) the default for its number.
   const DEFAULT_TAX = new Map(DEFAULT_COA.map(x => [x[0], x[3] || '']));
   const IS_TYPES = ['Revenue', 'COGS', 'Expense'];
+  // P13-2 (D78): normal balance by type; contra accounts (owner draws, returns and allowances) carry a debit balance.
+  const CONTRA_RE = { Equity: /draw|distribution|withdraw/i, Revenue: /return|allowance|discount/i };
+  const normalOf = a => (CONTRA_RE[a.type] && CONTRA_RE[a.type].test(a.name || '')) || ['Asset', 'COGS', 'Expense'].includes(a.type) ? 'Debit' : 'Credit';
   const taxLineOf = a => IS_TYPES.includes(a.type) ? (a.taxLine != null ? a.taxLine : DEFAULT_TAX.get(a.no) || '') : '';
   let acctByNo = new Map();
   function indexCoa() { state.coa.sort((a, b) => a.no - b.no); acctByNo = new Map(state.coa.map(a => [a.no, a])); }
@@ -3513,7 +3530,7 @@ main { padding-block: 24px 120px; }
       ${warns.join('')}
       <div class="field co-field"><label for="co-name">Company name <span class="opt">(optional, printed on the trial balance and statements)</span></label><input class="inp" id="co-name" type="text" maxlength="80" autocomplete="organization" value="${esc(state.company || '')}"></div>
       ${iscHtml(J)}
-      <p class="file-line"><span class="mono" id="wb-name">${esc(workbookName(J))}</span> · sheets: Overview, General Ledger, Trial Balance, Income Statement, Balance Sheet, Schedule C, Transactions, Chart of Accounts${J.skipped ? ` · ${J.skipped} zero-amount row${J.skipped === 1 ? '' : 's'} listed but not posted` : ''}</p>
+      <p class="file-line"><span class="mono" id="wb-name">${esc(workbookName(J))}</span> · sheets: Overview, General Ledger, Trial Balance, Income Statement, Balance Sheet, Schedule C (one per tax year), Transactions, Chart of Accounts${J.skipped ? ` · ${J.skipped} zero-amount row${J.skipped === 1 ? '' : 's'} listed but not posted` : ''}</p>
       <p class="dl-status ${st ? st.kind : ''}" id="dl-status" role="status" aria-live="polite" ${st ? '' : 'hidden'}>${st ? esc(st.text) : ''}</p>
       <p class="bal-note">Cash basis: income and expenses are counted when money moves through these accounts. The trial balance, income statement and balance sheet in the workbook are live formulas on the General Ledger, so a change to an account number there flows through. The Schedule C sheet lays the same numbers out on the lines of Schedule C (Form 1040); check it against your records before you file.</p>
     </div>`;
@@ -3651,10 +3668,14 @@ main { padding-block: 24px 120px; }
     const tbS = wb.addWorksheet(SHEET.tb);
     const isS = wb.addWorksheet(SHEET.is, { pageSetup: { fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
     const bsS = wb.addWorksheet(SHEET.bs, { pageSetup: { fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-    const scS = wb.addWorksheet(SHEET.sc, { pageSetup: { fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+    // P13-3 (D79): one Schedule C per calendar tax year of the transactions ("Schedule C <year>" when there are several).
+    const scYears = [...new Set(J.entries.filter(e => e.kind === 1).map(e => e.date.slice(0, 4)))].sort();
+    if (!scYears.length) scYears.push((J.first || todayIso()).slice(0, 4));
+    const scMulti = scYears.length > 1, scName = y => scMulti ? `${SHEET.sc} ${y}` : SHEET.sc;
+    const scSheets = scYears.map(y => wb.addWorksheet(scName(y), { pageSetup: { fitToPage: true, fitToWidth: 1, fitToHeight: 0 } }));
     const txS = wb.addWorksheet(SHEET.tx, { views: [{ state: 'frozen', ySplit: 1 }] });
     const coaS = wb.addWorksheet(SHEET.coa, { views: [{ state: 'frozen', ySplit: 1 }] });
-    const COA_A = sref(SHEET.coa, '$A:$A'), COA_B = sref(SHEET.coa, '$B:$B'), COA_C = sref(SHEET.coa, '$C:$C'), COA_F = sref(SHEET.coa, '$F:$F');
+    const COA_A = sref(SHEET.coa, '$A:$A'), COA_B = sref(SHEET.coa, '$B:$B'), COA_C = sref(SHEET.coa, '$C:$C'), COA_E = sref(SHEET.coa, '$E:$E'), COA_F = sref(SHEET.coa, '$F:$F');
     const GL_A = sref(SHEET.gl, '$A:$A'), GL_G = sref(SHEET.gl, '$G:$G'), GL_H = sref(SHEET.gl, '$H:$H');
     const nameF = (cell, no) => F(`IFERROR(INDEX(${COA_B},MATCH(${cell},${COA_A},0)),"Not in the chart of accounts")`, (acctByNo.get(no) || {}).name || 'Not in the chart of accounts');
     const netGL = cell => `SUMIFS(${GL_G},${GL_A},${cell})-SUMIFS(${GL_H},${GL_A},${cell})`;
@@ -3682,7 +3703,7 @@ main { padding-block: 24px 120px; }
       error: 'This number is not on the Chart of Accounts sheet. Its amount will show under "Not in the chart of accounts" on the Trial Balance.' });
 
     // Trial Balance: summary block (statements, checks), then every COA account (so a GL edit to any account shows up).
-    heading(tbS, 'Trial Balance', `Period ${usDate(J.first)} – ${usDate(J.last)} · Cash basis · US dollars`);
+    heading(tbS, 'Trial Balance (Cash Basis)', `Period ${usDate(J.first)} – ${usDate(J.last)} · US dollars`);   // P13-2: the basis is in the title (AU-C 800 / AR-C 80)
     tbS.getCell('A3').value = `Built by Statements to Books on ${usDate(todayIso())}. Debit balances are positive in the Net column.`;
     let r = 5;
     tbS.getRow(r).values = ['No', 'Statement', 'Reconciliation', 'Ending per books (Dr − Cr)', 'Ending per statement', 'Difference']; styleHeader(tbS.getRow(r));
@@ -3703,18 +3724,19 @@ main { padding-block: 24px 120px; }
     if (J.skipped) { tbS.getRow(r).values = [null, 'Zero-amount rows (not posted)', `${J.skipped}`]; r++; }
     const summaryEnd = r - 1;
     r++;
-    const hdr = r; tbS.getRow(hdr).values = ['No', 'Account', 'Type', 'Debit', 'Credit', 'Net (Dr − Cr)']; styleHeader(tbS.getRow(hdr));
+    const hdr = r; tbS.getRow(hdr).values = ['No', 'Account', 'Type', 'Debit', 'Credit', 'Net (Dr − Cr)', 'Normal balance']; styleHeader(tbS.getRow(hdr));
     const a0 = hdr + 1;
     r = a0;
     for (const a of state.coa) {
       const c = J.net.get(a.no) || 0;
       tbS.getRow(r).values = [a.no, nameF(`A${r}`, a.no), F(`IFERROR(INDEX(${COA_C},MATCH(A${r},${COA_A},0)),"")`, a.type),
-        F(`MAX(0,F${r})`, dollars(Math.max(0, c))), F(`MAX(0,-F${r})`, dollars(Math.max(0, -c))), F(netGL(`A${r}`), dollars(c))];
+        F(`MAX(0,F${r})`, dollars(Math.max(0, c))), F(`MAX(0,-F${r})`, dollars(Math.max(0, -c))), F(netGL(`A${r}`), dollars(c)),
+        F(`IFERROR(INDEX(${COA_E},MATCH(A${r},${COA_A},0)),"")`, normalOf(a))];   // P13-2: feeds the Overview's abnormal-balance count
       r++;
     }
     const a1 = r - 1;
     tbS.getRow(r).values = [null, 'Not in the chart of accounts', '', F(`MAX(0,F${r})`, dollars(Math.max(0, B.unknown))), F(`MAX(0,-F${r})`, dollars(Math.max(0, -B.unknown))),
-      F(`(SUM(${GL_G})-SUM(${GL_H}))-SUM(F${a0}:F${a1})`, dollars(B.unknown))];
+      F(`ROUND((SUM(${GL_G})-SUM(${GL_H}))-SUM(F${a0}:F${a1}),2)`, dollars(B.unknown))];   // P13-2: no 0.00 float residue after Excel recalculates
     tbS.getRow(r).font = { italic: true };
     const unl = r; r++;
     const tDr = [...J.net.values()].reduce((s, c) => s + Math.max(0, c), 0), tCr = [...J.net.values()].reduce((s, c) => s + Math.max(0, -c), 0);
@@ -3771,8 +3793,8 @@ main { padding-block: 24px 120px; }
       S.r += 2;
       return { row, cents: sum, pcents: psum };
     }
-    const period = `${usDate(J.first)} – ${usDate(J.last)} · Cash basis${np ? ` · by ${per.mode}` : ''}`;
-    const IS = statementSheet(isS, 'Income Statement', period, np ? per : null);
+    const period = `${usDate(J.first)} – ${usDate(J.last)}${np ? ` · by ${per.mode}` : ''}`;
+    const IS = statementSheet(isS, 'Income Statement (Cash Basis)', period, np ? per : null);
     const rev = section(IS, 'Revenue', 'Revenue', -1), cogs = section(IS, 'Cost of goods sold', 'COGS', 1);
     const gpc = rev.pcents.map((v, k) => v - cogs.pcents[k]);
     const gp = sumRow(IS, 'Gross profit', c => `${c}${rev.row}-${c}${cogs.row}`, gpc, rev.cents - cogs.cents, TOP); IS.r += 2;
@@ -3786,7 +3808,7 @@ main { padding-block: 24px 120px; }
     }
     moneyCols(isS, [...Array(IS.tc - 2).keys()].map(k => k + 3));
 
-    const BS = statementSheet(bsS, 'Balance Sheet', `As of ${usDate(J.last)} · Cash basis`);
+    const BS = statementSheet(bsS, 'Balance Sheet (Cash Basis)', `As of ${usDate(J.last)}`);
     const as = section(BS, 'Assets', 'Asset', 1), li = section(BS, 'Liabilities', 'Liability', -1);
     const eq = section(BS, 'Equity', 'Equity', -1, [{ label: 'Current earnings (net income)', formula: `${sref(SHEET.is, '$' + L(IS.tc) + '$' + ni)}`, cents: B.ni }]);
     const tle = BS.r; bsS.getRow(tle).values = [null, 'Total liabilities and equity', F(`C${li.row}+C${eq.row}`, dollars(li.cents + eq.cents))];
@@ -3794,19 +3816,43 @@ main { padding-block: 24px 120px; }
     const bchk = BS.r; bsS.getRow(bchk).values = [null, 'Check: assets − (liabilities + equity), must be 0', F(`ROUND(C${as.row}-C${tle},2)`, dollars(B.bsCheck))];
     bsS.getRow(bchk).font = { bold: true }; checkFormat(bsS, `C${bchk}`);
     moneyCols(bsS, [3]);
+    // P13-4 (D80): each statement account's balance is as of its latest statement's closing date, which can be well before the
+    // last transaction of another account. Column D says which date; a balance more than 31 days older than the sheet's date warns.
+    const asOf = new Map(J.accts.map(g => [g.no, stmtEnd(g.srcs[g.srcs.length - 1])]));
+    bsS.getCell('D4').value = 'Balance as of'; styleHeader(bsS.getRow(4));
+    for (let k = 5; k < bchk; k++) { const no = bsS.getCell(`A${k}`).value; if (asOf.has(no) && asOf.get(no)) { bsS.getCell(`D${k}`).value = xlDate(asOf.get(no)); bsS.getCell(`D${k}`).numFmt = XL_DATE; } }
+    const staleDate = J.last ? addDays(J.last, -31) : null;
+    const stale = [...asOf].filter(([, d]) => d && staleDate && d < staleDate);
+    if (stale.length) {
+      const w = bchk + 2;
+      bsS.getCell(`A${w}`).value = `Not one date: ${stale.length === 1 ? '1 account shows a balance' : `${stale.length} accounts show balances`} more than 31 days older than ${usDate(J.last)} (${stale.map(([no, d]) => `${no} as of ${usDate(d)}`).join(', ')}). Each balance is as of its statement's closing date (column D); add the later statements, or read these balances as of their own dates.`;
+      bsS.getCell(`A${w}`).font = { color: { argb: 'FF9C0006' }, bold: true };
+    }
+    const bsAsOf = { range: sref(SHEET.bs, `$D$5:$D$${bchk - 1}`), crit: J.last ? `"<"&(DATE(${+J.last.slice(0, 4)},${+J.last.slice(5, 7)},${+J.last.slice(8, 10)})-31)` : null, n: stale.length };
 
-    let scOut = null;   // P10-5: { r31, v31, chk, chkv } for the Overview
+    const scOuts = [];   // P10-5 / P13-3: per tax year { name, Y, r31, v31, chk, chkv, niRow, niV, note } for the Overview
     // Schedule C (P9-1, D69): your books laid out on the lines of Schedule C (Form 1040). Left: the form (A–D). Right (F–K): one
-    // row per income/expense account, its line tag looked up live from the Chart of Accounts sheet and its balance from the TB;
-    // each line is a SUMIFS on that tag. Yellow cells are what statements can't supply (inventory, home office).
-    {
+    // row per income/expense account, its line tag looked up live from the Chart of Accounts sheet and its balance for the tax
+    // year from the GL (date-bounded SUMIFS, P13-3); each line is a SUMIFS on that tag. Yellow cells are what statements can't
+    // supply (inventory, home office). Line numbers follow that year's form: 2022–2024 put other expenses on 27a, 2025 on 27b.
+    scYears.forEach((Y, yi) => {
+      const scS = scSheets[yi];
       const isAcct = state.coa.filter(a => IS_TYPES.includes(a.type));
+      const ynet = new Map(), yDates = []; let yUnc = 0;   // this year's activity (cents), dates and uncategorized count
+      for (const e of J.entries) {
+        if (e.kind !== 1 || e.date.slice(0, 4) !== Y) continue;
+        yDates.push(e.date); if (e.lines.some(([no]) => no === UNC_IN || no === UNC_OUT)) yUnc++;
+        for (const [no, d, c] of e.lines) ynet.set(no, (ynet.get(no) || 0) + d - c);
+      }
+      yDates.sort();
+      const ED = +Y >= 2025 ? 2025 : +Y >= 2023 ? 2023 : 2022, OTH = ED === 2025 ? '27b' : '27a', ENE = OTH === '27a' ? '27b' : '27a';
+      const yS = `DATE(${+Y},1,1)`, yE = `DATE(${+Y},12,31)`, inY = `${GL_C},">="&${yS},${GL_C},"<="&${yE}`;
       const d0 = 5, d1 = d0 + Math.max(isAcct.length, 1) - 1, dr = col => `$${col}$${d0}:$${col}$${d1}`;
       const put = (r, c, v) => { scS.getCell(r, c).value = v; };
       const tagAmt = new Map(), tagEff = new Map();   // tag → amount (revenue as credits, costs as debits) and effect on net income, cents
       const amtOf = new Map();
       for (const a of isAcct) {
-        const net = J.net.get(a.no) || 0, t = taxLineOf(a), amt = a.type === 'Revenue' ? -net : net;
+        const net = ynet.get(a.no) || 0, t = taxLineOf(a), amt = a.type === 'Revenue' ? -net : net;
         amtOf.set(a.no, amt); tagAmt.set(t, (tagAmt.get(t) || 0) + amt); tagEff.set(t, (tagEff.get(t) || 0) - net);
       }
       const TA = t => tagAmt.get(t) || 0, TE = t => tagEff.get(t) || 0;
@@ -3817,7 +3863,7 @@ main { padding-block: 24px 120px; }
         ['16a', 'Interest: mortgage (paid to banks, etc.)'], ['16b', 'Interest: other'], ['17', 'Legal and professional services'], ['18', 'Office expense'],
         ['19', 'Pension and profit-sharing plans'], ['20a', 'Rent or lease: vehicles, machinery, equipment'], ['20b', 'Rent or lease: other business property'],
         ['21', 'Repairs and maintenance'], ['22', 'Supplies (not included in Part III)'], ['23', 'Taxes and licenses'], ['24a', 'Travel'],
-        ['24b', 'Deductible meals (50% of the Meals account)'], ['25', 'Utilities'], ['26', 'Wages (less employment credits)'], ['27a', 'Energy efficient commercial buildings deduction (Form 7205)']];
+        ['24b', 'Deductible meals (50% of the Meals account)'], ['25', 'Utilities'], ['26', 'Wages (less employment credits)']];
       const vAccts = isAcct.filter(a => taxLineOf(a) === 'V');
       const V = {};   // line → cents
       V['1'] = TA('L1'); V['2'] = -TA('L2'); V['3'] = V['1'] - V['2'];
@@ -3825,21 +3871,21 @@ main { padding-block: 24px 120px; }
       V['40'] = V['35'] + V['36'] + V['37'] + V['38'] + V['39']; V['41'] = 0; V['42'] = V['40'] - V['41'];
       V['4'] = V['42']; V['5'] = V['3'] - V['4']; V['6'] = TA('L6'); V['7'] = V['5'] + V['6'];
       for (const [k] of EXP) V[k] = k === '24b' ? half(TA('L24b')) : TA('L' + k);
-      V['48'] = TA('V'); V['27b'] = V['48'];
-      V['28'] = [...EXP.map(x => x[0]), '27b'].reduce((s, k) => s + V[k], 0); V['29'] = V['7'] - V['28']; V['30'] = 0; V['31'] = V['29'] - V['30'];
+      V['48'] = TA('V'); V[OTH] = V['48']; V[ENE] = TA('L27a');
+      V['28'] = [...EXP.map(x => x[0]), '27a', '27b'].reduce((s, k) => s + V[k], 0); V['29'] = V['7'] - V['28']; V['30'] = 0; V['31'] = V['29'] - V['30'];
 
       // Row layout
       let r = 5; const R = {};
       const part1 = r++; for (const k of ['1', '2', '3', '4', '5', '6', '7']) R[k] = r++;
       r++; const part2 = r++; for (const x of EXP) R[x[0]] = r++;
-      for (const k of ['27b', '28', '29', '30', '31']) R[k] = r++;
+      for (const k of ['27a', '27b', '28', '29', '30', '31']) R[k] = r++;
       r++; const part3 = r++; for (const k of ['35', '36', '37', '38', '39', '40', '41', '42']) R[k] = r++;
       r++; const part5 = r++; const vRow0 = r; r += vAccts.length; const vOther = r++; R['48'] = r++;
       r++; const recon = r++; const rc = {}; for (const k of ['ni', 'x', 'u', 'inv', 'meal', 'exp', 'got', 'chk']) rc[k] = r++;
       const C = k => `C${R[k]}`;
 
-      heading(scS, 'Schedule C worksheet', `${usDate(J.first)} – ${usDate(J.last)} · Cash basis · US dollars`);
-      put(3, 1, 'Your books on the lines of Schedule C (Form 1040), Profit or Loss From Business (2025 form). Bookkeeping support, not tax advice. Yellow cells are amounts statements can\'t supply. Not covered: header items A–J, Part IV vehicle information, Form 4562 and Form 8829 detail.');
+      heading(scS, 'Schedule C worksheet', `Tax year ${Y} · ${usDate(yDates[0] || J.first)} – ${usDate(yDates[yDates.length - 1] || J.last)} · Cash basis · US dollars`);
+      put(3, 1, `Your books for tax year ${Y} on the lines of Schedule C (Form 1040), Profit or Loss From Business, numbered as on the ${ED} form${ED === 2023 ? ' (the 2023 and 2024 forms are the same)' : ''}${+Y > 2025 ? '; check this year\'s form for changes' : ''}. Accounting method (item F): Cash. Only transactions dated in ${Y} are here. Bookkeeping support, not tax advice. Yellow cells are amounts statements can't supply. Not covered: header items A–J, Part IV vehicle information, Form 4562 and Form 8829 detail.`);
       ['Line', 'Description', 'Amount', 'Note'].forEach((t, k) => put(4, 1 + k, t)); styleHeader(scS.getRow(4));
       ['No', 'Account', 'Schedule C line', 'Net (Dr − Cr)', 'Amount', 'Effect on net income'].forEach((t, k) => put(4, 6 + k, t)); styleHeader(scS.getRow(4));
       const part = (row, t) => { put(row, 1, t); scS.getRow(row).font = { bold: true }; };
@@ -3862,11 +3908,17 @@ main { padding-block: 24px 120px; }
       part(part2, 'Part II · Expenses');
       for (const [k, d] of EXP) line(k, d, k === '24b' ? `ROUND(${sumTag('L24b')}*0.5,2)` : sumTag('L' + k),
         k === '24b' ? 'The form takes the deductible part: 50% of Meals (check the instructions for exceptions).' : k === '13' ? 'Only what you categorize here; compute depreciation on Form 4562.' : '');
-      line('27b', 'Other expenses (from line 48)', C('48'));
+      const eneDesc = ED === 2022 ? 'Reserved for future use (on the 2022 form an energy-efficient deduction goes in Part V)' : 'Energy efficient commercial buildings deduction (Form 7205)';
+      for (const k of ['27a', '27b']) line(k, k === OTH ? 'Other expenses (from line 48)' : eneDesc, k === OTH ? C('48') : sumTag('L27a'));
       line('28', 'Total expenses before expenses for business use of home', `SUM(C${R['8']}:C${R['27b']})`, null, { bold: 1, top: 1 });
       line('29', 'Tentative profit or (loss)', `${C('7')}-${C('28')}`, null, { bold: 1 });
       line('30', 'Expenses for business use of your home', '', 'Enter it yourself (Form 8829, or the simplified method worksheet).', { input: 1 });
-      line('31', 'Net profit or (loss)', `${C('29')}-${C('30')}`, 'Goes to Schedule 1 (Form 1040) line 3 and Schedule SE.', { bold: 1 });
+      line('31', 'Net profit or (loss)', `${C('29')}-${C('30')}`, null, { bold: 1 });
+      // P13-2 (D78): line 31 says it is not final while transactions are uncategorized, and a loss points to line 32 (live).
+      const uncF = `COUNTIFS(${GL_A},${UNC_IN},${inY})+COUNTIFS(${GL_A},${UNC_OUT},${inY})`;   // this year's uncategorized lines
+      const note31 = (n, v) => `${n ? `Not final: ${n.toLocaleString('en-US')} uncategorized transactions are on no line. ` : ''}${v < 0 ? 'A loss: check 32a or 32b, and attach Form 6198 if some investment is not at risk. ' : ''}Goes to Schedule 1 (Form 1040) line 3 and Schedule SE line 2.`;
+      put(R['31'], 4, F(`IF(${uncF}>0,"Not final: "&TEXT(${uncF},"#,##0")&" uncategorized transactions are on no line. ","")&IF(${C('31')}<0,"A loss: check 32a or 32b, and attach Form 6198 if some investment is not at risk. ","")&"Goes to Schedule 1 (Form 1040) line 3 and Schedule SE line 2."`, note31(yUnc, V['31'])));
+      const note = { f: `IF(${uncF}>0,"Not final: "&TEXT(${uncF},"#,##0")&" uncategorized","")`, v: yUnc ? `Not final: ${yUnc.toLocaleString('en-US')} uncategorized` : '' };
       scS.getCell(R['31'], 3).border = TOTAL;
       part(part3, 'Part III · Cost of goods sold');
       line('35', 'Inventory at beginning of year', '', 'Enter it yourself (cash basis books carry no inventory).', { input: 1 });
@@ -3885,16 +3937,19 @@ main { padding-block: 24px 120px; }
       const listed = vAccts.reduce((s, a) => s + (amtOf.get(a.no) || 0), 0);
       put(vOther, 2, 'Other accounts mapped to Part V (added after export)'); put(vOther, 3, F(vAccts.length ? `${sumTag('V')}-SUM(C${vRow0}:C${vOther - 1})` : sumTag('V'), dollars(V['48'] - listed)));   // no listed rows: nothing to subtract (a range ending above its own row would include it)
       scS.getRow(vOther).font = { italic: true };
-      line('48', 'Total other expenses', `SUM(C${vRow0}:C${vOther})`, 'Enters on line 27b.', { bold: 1, top: 1 });
+      line('48', 'Total other expenses', `SUM(C${vRow0}:C${vOther})`, `Enters on line ${OTH}.`, { bold: 1, top: 1 });
 
       // Reconciliation: the sheet must agree with the Income Statement apart from the stated differences.
       const NI = `${sref(SHEET.is, '$' + L(IS.tc) + '$' + ni)}`;
       const inv = V['35'] - V['41'];
       const meal = TA('L24b') - V['24b'];   // the half of Meals line 24b leaves out
-      const expect = B.ni - TE('X') - TE('U') - inv + meal;
+      // One tax year: start from the Income Statement. Several: from this year's activity in the GL (the Overview adds the years up).
+      const yNI = isAcct.reduce((s, a) => s - (ynet.get(a.no) || 0), 0), niBase = scMulti ? yNI : B.ni;
+      const expect = niBase - TE('X') - TE('U') - inv + meal;
       part(recon, 'Reconciliation to the Income Statement');
       const rrow = (k, label, f, cents, note) => { put(rc[k], 2, label); put(rc[k], 3, F(f, dollars(cents))); if (note) put(rc[k], 4, note); };
-      rrow('ni', 'Net income per the Income Statement', NI, B.ni);
+      if (scMulti) rrow('ni', `Net income dated in ${Y} (from the General Ledger)`, `SUM(${dr('K')})`, yNI, 'The years on these sheets add up to the Income Statement (Overview check).');
+      else rrow('ni', 'Net income per the Income Statement', NI, B.ni);
       rrow('x', 'Less: accounts marked "Not on Schedule C"', effTag('X'), TE('X'), 'For example interest income, which goes on Form 1040.');
       rrow('u', 'Less: uncategorized income and expenses', effTag('U'), TE('U'), 'Review these on the Review step; they are on no line.');
       rrow('inv', 'Less: inventory change (line 35 − line 41)', `${C('35')}-${C('41')}`, inv);
@@ -3904,29 +3959,33 @@ main { padding-block: 24px 120px; }
       put(rc.chk, 2, 'Check: difference (must be 0)'); put(rc.chk, 3, F(`ROUND(C${rc.exp}-C${rc.got},2)`, dollars(expect - V['29'])));
       put(rc.chk, 4, 'Not 0 means an income or expense account has no Schedule C line (Chart of Accounts sheet, column F).');
       scS.getRow(rc.chk).font = { bold: true }; checkFormat(scS, `C${rc.chk}`);
-      scOut = { r31: R['31'], v31: V['31'], chk: rc.chk, chkv: expect - V['29'] };
+      scOuts.push({ name: scS.name, Y, r31: R['31'], v31: V['31'], chk: rc.chk, chkv: expect - V['29'], niRow: rc.ni, niV: niBase, note });
 
       // Account detail (F–K)
       isAcct.forEach((a, i) => {
-        const row = d0 + i, net = J.net.get(a.no) || 0, t = taxLineOf(a), m = `MATCH(F${row},${COA_A},0)`;
+        const row = d0 + i, net = ynet.get(a.no) || 0, t = taxLineOf(a), m = `MATCH(F${row},${COA_A},0)`;
         put(row, 6, a.no); put(row, 7, nameF(`F${row}`, a.no));
         put(row, 8, F(`IFERROR(INDEX(${COA_F},${m})&"","")`, t));
-        put(row, 9, F(`SUMIFS(${TB_F},${TB_A},F${row})`, dollars(net)));
+        put(row, 9, F(`SUMIFS(${GL_G},${GL_A},F${row},${inY})-SUMIFS(${GL_H},${GL_A},F${row},${inY})`, dollars(net)));
         put(row, 10, F(`IF(IFERROR(INDEX(${COA_C},${m}),"")="Revenue",-I${row},I${row})`, dollars(amtOf.get(a.no) || 0)));
         put(row, 11, F(`-I${row}`, dollars(-net)));
       });
       moneyCols(scS, [3, 9, 10, 11]);
       scS.views = [{ state: 'frozen', ySplit: 4 }];
-    }
+    });
 
     // Transactions: the cleaned source lines, static (audit trail).
     styleHeader(txS.addRow(['Source', 'Source Account', 'Date', 'Description', 'Amount', 'Assigned Account', 'Account Name', 'How Assigned', 'Transfer Pair', 'Memo', 'Cardholder']));   // P10-3: memo + cardholder appended, so columns A–I hold
     const ruleById = new Map(state.applied.map(x => [x.id, x]));
+    const cardNos = J.accts.filter(g => g.srcs[0].type === 'card').map(g => g.no);
+    let nPossible = 0, nCardIn = 0;   // P13-2: review counts for the Overview (possible transfers; money in on a card left as income)
     for (const s of J.srcs) for (const t of state.txns) {
       if (t.sourceId !== s.id) continue;
       const acct = !t.amountCents ? null : t.offsetAccountNo ?? (t.amountCents > 0 ? UNC_IN : UNC_OUT);
       const how = !t.amountCents ? 'Zero amount (not posted)' : t.manual ? 'Your choice' : t.transferPairId ? 'Matched transfer'
         : t.possibleTransfer ? 'Possible transfer (uncategorized)' : t.ruleId ? `Rule: ${(ruleById.get(t.ruleId) || {}).pattern || ''}` : 'Uncategorized';
+      if (how.startsWith('Possible transfer')) nPossible++;
+      if (acct === UNC_IN && t.amountCents > 0 && cardNos.includes(s.coaAccountNo)) nCardIn++;
       const o = t.pairWith && state.txnById.get(t.pairWith);
       txS.addRow([s.name, s.coaAccountNo, xlDate(t.date), descOf(t), dollars(t.amountCents), acct, acct != null ? (acctByNo.get(acct) || {}).name || '' : '',
         how, o ? `${t.transferPairId.toUpperCase()} ↔ ${srcName.get(o.sourceId) || ''} ${usDate(o.date)}` : '', t.memo || '', t.cardholder || '']);
@@ -3938,7 +3997,7 @@ main { padding-block: 24px 120px; }
     // Columns F–G (P9-1): the Schedule C line tag the Schedule C sheet sums by (edit it here and that sheet follows).
     const schedName = new Map(SCHED_LINES);
     styleHeader(coaS.addRow(['No', 'Name', 'Type', 'Statement', 'Normal Balance', 'Schedule C Line', 'Schedule C Description']));
-    for (const a of state.coa) { const t = taxLineOf(a); coaS.addRow([a.no, a.name, a.type, ['Asset', 'Liability', 'Equity'].includes(a.type) ? 'BS' : 'IS', ['Asset', 'COGS', 'Expense'].includes(a.type) ? 'Debit' : 'Credit', t || null, schedName.get(t) || null]); }
+    for (const a of state.coa) { const t = taxLineOf(a); coaS.addRow([a.no, a.name, a.type, ['Asset', 'Liability', 'Equity'].includes(a.type) ? 'BS' : 'IS', normalOf(a), t || null, schedName.get(t) || null]); }
 
     // Overview (P10-5, D73): the first tab. Headline numbers and every check, each a live formula on the sheet that owns it
     // (cached result = the same cents), then one row per account. Nothing here is a new calculation.
@@ -3965,7 +4024,10 @@ main { padding-block: 24px 120px; }
       line('Gross profit', ref(SHEET.is, `${T}${gp}`), rev.cents - cogs.cents, SHEET.is, { border: TOP });
       line('Total expenses', ref(SHEET.is, `${T}${exp.row}`), exp.cents, SHEET.is);
       line('Net income', ref(SHEET.is, `${T}${ni}`), B.ni, SHEET.is, { bold: true, border: TOTAL });
-      if (scOut) line('Schedule C net profit (line 31)', ref(SHEET.sc, `C${scOut.r31}`), scOut.v31, SHEET.sc);
+      for (const x of scOuts) {   // P13-3: one line 31 per tax year; P13-2: "Not final" beside it while uncategorized
+        const k = line(scMulti ? `Schedule C ${x.Y} net profit (line 31)` : 'Schedule C net profit (line 31)', ref(x.name, `C${x.r31}`), x.v31, x.name);
+        ovS.getCell(`E${k}`).value = F(x.note.f, x.note.v); ovS.getCell(`E${k}`).font = { color: { argb: 'FF9C0006' } };
+      }
       o++;
       head('Balance sheet');
       line('Total assets', ref(SHEET.bs, `C${as.row}`), as.cents, SHEET.bs);
@@ -3975,7 +4037,12 @@ main { padding-block: 24px 120px; }
       head('Checks (each must be 0)');
       line('Trial balance: debits − credits', ref(SHEET.tb, `D${chk}`), J.dr - J.cr, SHEET.tb, { check: 1 });
       line('Balance sheet: assets − (liabilities + equity)', ref(SHEET.bs, `C${bchk}`), B.bsCheck, SHEET.bs, { check: 1 });
-      if (scOut) line('Schedule C: reconciliation to the income statement', ref(SHEET.sc, `C${scOut.chk}`), scOut.chkv, SHEET.sc, { check: 1 });
+      if (scOuts.length === 1) line('Schedule C: reconciliation to the income statement', ref(scOuts[0].name, `C${scOuts[0].chk}`), scOuts[0].chkv, scOuts[0].name, { check: 1 });
+      else {   // P13-3: every year reconciles, and the years' net income adds up to the Income Statement's
+        const sumOf = k => scOuts.map(x => ref(x.name, `C${x[k]}`)).join('+');
+        const v = scOuts.reduce((s, x) => s + x.chkv, 0) + (B.ni - scOuts.reduce((s, x) => s + x.niV, 0));
+        line('Schedule C: reconciliation to the income statement', `ROUND(${sumOf('chk')}+(${ref(SHEET.is, `${T}${ni}`)}-(${sumOf('niRow')})),2)`, v, scOuts[0].name, { check: 1 });
+      }
       line(`${TRANSFER_NO} Transfer Clearing balance`, ref(SHEET.tb, `D${clr}`), B.clearing, SHEET.tb, { check: 1 });
       o++;
       head('To review (0 when done)');
@@ -3983,6 +4050,15 @@ main { padding-block: 24px 120px; }
       const offN = J.accts.filter(g => { const end = g.srcs[g.srcs.length - 1].endingCents; return end != null && (J.net.get(g.no) || 0) !== end; }).length;
       line('Accounts whose books don\'t match the statement', offRange ? `SUMPRODUCT(ISNUMBER(${offRange})*(${offRange}<>0))` : '0', offN, SHEET.tb, { count: 1, check: 'warn' });
       line(`Transactions in ${UNC_IN} / ${UNC_OUT} (uncategorized)`, `COUNTIF(${GL_A},${UNC_IN})+COUNTIF(${GL_A},${UNC_OUT})`, B.unc, SHEET.gl, { count: 1, check: 'warn' });
+      line('Accounts whose balance is more than 31 days older than the balance sheet', bsAsOf.crit ? `COUNTIFS(${bsAsOf.range},${bsAsOf.crit})` : '0', bsAsOf.n, SHEET.bs, { count: 1, check: 'warn' });   // P13-4
+      // P13-2 (D78): balances on the wrong side of their normal balance (e.g. a loan repaid that was never booked), and money that
+      // probably isn't income: transfers with no other side, and payments or refunds credited to a card. Live on the TB / Transactions.
+      { const F_ = ref(SHEET.tb, `$F$${a0}:$F$${a1}`), G_ = ref(SHEET.tb, `$G$${a0}:$G$${a1}`), A_ = ref(SHEET.tb, `$A$${a0}:$A$${a1}`);
+        const nAb = state.coa.filter(a => { const c = J.net.get(a.no) || 0; return a.no !== OBE_NO && c && (c > 0) !== (normalOf(a) === 'Debit'); }).length;
+        line('Accounts with an abnormal balance', `SUMPRODUCT((ROUND(${F_},2)<>0)*((${F_}>0)<>(${G_}="Debit"))*(${A_}<>${OBE_NO}))`, nAb, SHEET.tb, { count: 1, check: 'warn' }); }
+      { const TX = c => ref(SHEET.tx, `$${c}:$${c}`);
+        line(`Possible transfers left in ${UNC_IN} / ${UNC_OUT}`, `COUNTIF(${TX('H')},"Possible transfer*")`, nPossible, SHEET.tx, { count: 1, check: 'warn' });
+        line(`Money in on a credit card left in ${UNC_IN} (payments, refunds)`, (cardNos.length ? cardNos : [0]).map(n => `COUNTIFS(${TX('B')},${n},${TX('F')},${UNC_IN},${TX('E')},">0")`).join('+'), nCardIn, SHEET.tx, { count: 1, check: 'warn' }); }
       o++;
       ovS.getRow(o).values = ['No', 'Account', 'Ending per books', 'Type', 'Statements', 'Reconciliation']; styleHeader(ovS.getRow(o)); o++;
       J.accts.forEach((g, k) => {
@@ -4007,8 +4083,11 @@ main { padding-block: 24px 120px; }
     }
 
     fitCols(glS, 0, 6, 60); fitCols(tbS, 3, 6, 48); fitCols(isS, 2, 6, 48); fitCols(bsS, 2, 6, 48); fitCols(txS, 0, 6, 60);
-    scS.getColumn(1).width = 9; scS.getColumn(2).width = 58; scS.getColumn(3).width = 16; scS.getColumn(4).width = 64; scS.getColumn(5).width = 3;
-    [10, 34, 16, 16, 16, 18].forEach((w, k) => { scS.getColumn(6 + k).width = w; }); fitCols(coaS);
+    for (const scS of scSheets) {
+      scS.getColumn(1).width = 9; scS.getColumn(2).width = 58; scS.getColumn(3).width = 16; scS.getColumn(4).width = 64; scS.getColumn(5).width = 3;
+      [10, 34, 16, 16, 16, 18].forEach((w, k) => { scS.getColumn(6 + k).width = w; });
+    }
+    fitCols(coaS);
     glS.getColumn(3).width = Math.max(glS.getColumn(3).width, 12); txS.getColumn(3).width = Math.max(txS.getColumn(3).width, 12);
     return wb.xlsx.writeBuffer();
   }
