@@ -2,7 +2,9 @@
 
 Turn bank and credit-card statements into a set of books.
 
-**Use it here: https://amos843.github.io/statements-to-books/**
+**Use it here: https://bookbuilder.adroitie.com/**
+
+(The older link, https://amos843.github.io/statements-to-books/, runs the same page.)
 
 Upload statements (CSV, Excel or PDF), check how each transaction is categorized, and download an Excel workbook with a General Ledger, Trial Balance, Income Statement, Balance Sheet and Schedule C worksheet. The workbook uses live formulas, so you can keep editing it in Excel.
 
