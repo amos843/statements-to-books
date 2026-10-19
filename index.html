@@ -105,7 +105,7 @@ button, input, select { font: inherit; color: inherit; }
 
 /* Stepper */
 .stepper-bar { background: var(--surface); border-bottom: 1px solid var(--line); }
-.stepper { list-style: none; margin: 0; padding-block: 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.stepper { list-style: none; margin: 0; padding-block: 12px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }   /* P14-2 (D84): 5 steps */
 .step { position: relative; min-width: 0; }
 .step-btn {
   width: 100%; display: flex; align-items: center; gap: 10px;
@@ -467,6 +467,41 @@ main { padding-block: 24px 120px; }
   .grid.txg .c-sel .tap { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: -11px; cursor: pointer; }
 }
 
+/* Categorize suggestions (P14-4, D86): a list, not a table, so it holds at 375px */
+.cz-wrap { display: grid; gap: 12px; padding: 16px; }
+.cz-wrap h3 { font-size: var(--fs-md); font-weight: 600; }
+.cz-sub { font-size: var(--fs-sm); color: var(--muted); }
+.cz-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.cz-item { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); min-width: 0; }
+.cz-pick, .cz-rule { display: flex; align-items: flex-start; gap: 10px; font-size: var(--fs-sm); cursor: pointer; min-width: 0; overflow-wrap: anywhere; }
+.cz-pick { font-weight: 600; }
+.cz-pick input, .cz-rule input { flex: none; width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--accent); }
+.cz-ev { font-size: var(--fs-sm); color: var(--muted); padding-left: 26px; overflow-wrap: anywhere; }
+.cz-ctl { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 16px; padding-left: 26px; }
+.cz-ctl .field { flex: 1 1 220px; max-width: 360px; }
+.cz-ctl .cz-rule { flex: 1 1 220px; }
+.cz-ex { padding-left: 26px; font-size: var(--fs-sm); }
+.cz-ex summary { cursor: pointer; font-weight: 600; color: var(--accent); padding: 4px 0; }
+.cz-ex ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; }
+.cz-ex li { display: flex; flex-wrap: wrap; gap: 0 12px; font-size: var(--fs-xs); overflow-wrap: anywhere; }
+.cz-ex li .d { flex: 1 1 200px; min-width: 0; }
+/* Categories from your files (P14-5, D87) */
+.czf-cat { margin: 0; font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.czf .cz-ev, .czf .cz-ctl { padding-left: 0; }
+.czf .cz-item .msg:empty { display: none; }
+.czf-rules { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 4px; }
+.czf-rules legend { font-size: var(--fs-sm); font-weight: 600; padding: 0; margin-bottom: 4px; }
+.czf-rules .cz-item, .czf-rules li { padding: 4px 0; }
+@media (max-width: 640px) {
+  .cz-wrap { padding: 16px 12px; }
+  .cz-pick, .cz-rule { min-height: 44px; align-items: center; }
+  .cz-pick input, .cz-rule input { margin: 0; }
+  .cz-ev, .cz-ctl, .cz-ex { padding-left: 0; }
+  .cz-ctl .field { max-width: none; }
+  .cz-ctl select { min-height: 44px; }
+  .cz-ex summary { min-height: 44px; display: flex; align-items: center; }
+}
+
 /* Toast */
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--bar-h, 72px) + 8px); z-index: 20;
@@ -526,11 +561,12 @@ main { padding-block: 24px 120px; }
     <ol class="help-steps">
       <li><b>Upload.</b> Add bank or credit-card statements as CSV, Excel (XLSX/XLS) or PDF. Each file becomes one account in your books. If you upload several months of the same account as separate files, combine them on the Map step so they share one account and one opening balance. PDFs must contain text: a scanned PDF can't be read, so download a CSV instead.</li>
       <li><b>Map.</b> Check which columns hold the date, description and amount. Enter the opening balance from the statement (for a card, the amount owed). Add the ending balance too: the page checks that opening + transactions = ending. If every sign is backwards, it offers to flip them.</li>
-      <li><b>Review.</b> Keyword rules assign accounts; you fix the rest, one row or many at once. Payments between two of your uploaded accounts are matched and sent to 1950 Transfer Clearing, which should end at 0. Anything left goes to Uncategorized Income or Expense.</li>
+      <li><b>Categorize.</b> Before the row-by-row review, the page suggests accounts for uncategorized rows that look like rows you already assigned, and shows categories read from your files. Nothing changes until you apply a suggestion.</li>
+      <li><b>Review.</b> Keyword rules assign accounts; you fix the rest, one row or many at once. Transfers between two of your uploaded accounts (for example a card payment from your bank) are matched and posted to 1950 Transfer Clearing, which should end at 0; they are not income or expense. Anything left goes to 4999 Uncategorized Income or 6999 Uncategorized Expense and counts in net income, so net income and Schedule C aren't final until you assign it.</li>
       <li><b>Export.</b> Download one Excel workbook: an Overview of the results and checks, then the General Ledger, Trial Balance, Income Statement, Balance Sheet and Schedule C, plus the transactions and chart of accounts. Totals are live formulas on the ledger, so a change in Excel flows through. The income statement can show one column per month or quarter.</li>
     </ol>
     <h3>Cash basis only</h3>
-    <p>Income and expenses are counted when money moves through these accounts. There are no receivables, payables, accruals, depreciation or inventory, and a loan payment isn't split into principal and interest unless you split it. The books are a starting point: review the categories before you rely on the numbers, and check with your accountant for tax or financial reporting.</p>
+    <p>Income and expenses are counted when money moves through these accounts. There are no receivables, payables, accruals, depreciation or inventory, and a loan payment is posted in full to the one account you choose; it isn't split into principal and interest. The books are a starting point: review the categories before you rely on the numbers, and check with your accountant for tax or financial reporting.</p>
     <p>The chart of accounts is set up for a sole proprietor who files Schedule C (Form 1040): each income and expense account carries a Schedule C line, and the Excel file has a Schedule C sheet for each tax year that totals them. Your own income-tax payments and health insurance are not business expenses, so they are suggested as Owner Draws. This is bookkeeping support, not tax advice.</p>
     <h3>Using the Excel file</h3>
     <ul>
@@ -544,7 +580,7 @@ main { padding-block: 24px 120px; }
     <h3>Limits</h3>
     <ul>
       <li>US number and date formats only (1,234.56 and MM/DD/YYYY).</li>
-      <li>PDF reading was built on Bank of America, American Express, Capital One and Hanmi statements. Other banks often work; if a PDF doesn't reconcile, export a CSV from the bank instead.</li>
+      <li>PDF reading was built on Bank of America, American Express, Capital One and Hanmi statements. Other banks may work; if a PDF doesn't reconcile, export a CSV from the bank instead.</li>
       <li>Rules and your choices last only while this page is open. To reuse your rules and chart of accounts next time, use Save setup file on the Rules tab, then Open setup file in your next session. The setup file holds your rule patterns and account names, not transactions.</li>
       <li>To bring a chart of accounts from other software (QuickBooks, Xero, or any CSV/Excel list with number, name and type), use Import chart of accounts on the Chart of accounts tab. You see a preview before anything changes. "When opening" decides whether a setup file or an imported chart replaces your accounts or is merged into them. Imported bank and card accounts are separate from the accounts made for your uploaded files.</li>
     </ul>
@@ -567,7 +603,7 @@ main { padding-block: 24px 120px; }
     </div>
     <ul class="points" id="upload-points">
       <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="9" width="12" height="8" rx="1.5"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></svg><b>Private</b><span>Files are read in this browser tab and never uploaded. No sign-up, and nothing is kept when you close the page.</span></li>
-      <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M6.8 10.2 9 12.4l4.2-4.8"/></svg><b>Checks its own math</b><span>Each statement must reconcile from its opening to its ending balance, and debits must equal credits before you download.</span></li>
+      <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="M6.8 10.2 9 12.4l4.2-4.8"/></svg><b>Reconciles each statement</b><span>Opening balance plus transactions is compared with the ending balance you enter, and any difference is shown before you download. Debits must equal credits to download.</span></li>
       <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 8h14M3 12h14M8 4v12"/></svg><b>Excel you can keep editing</b><span>Totals are live formulas on the ledger, so a change in Excel flows through every report.</span></li>
     </ul>
     <div class="dropzone" id="dropzone">
@@ -602,10 +638,20 @@ main { padding-block: 24px 120px; }
     <div class="map-list" id="map-list"></div>
   </section>
 
-  <!-- Step 3: Review -->
+  <!-- Step 3: Categorize (P14-2, D84) -->
+  <section class="panel" id="panel-categorize" data-step="categorize" aria-labelledby="h-categorize" hidden>
+    <div class="panel-head">
+      <h2 id="h-categorize" tabindex="-1">Suggested categories</h2>
+      <p>Categories from your files, and accounts suggested from rows you already assigned. Nothing changes until you apply it. You can also skip this and categorize every row on the Review step.</p>
+    </div>
+    <div class="card" id="cz-files" hidden></div>
+    <div class="card" id="cz-sugg"></div>
+  </section>
+
+  <!-- Step 4: Review -->
   <section class="panel" id="panel-review" data-step="review" aria-labelledby="h-review" hidden>
     <div class="panel-head">
-      <h2 id="h-review" tabindex="-1">Categorize transactions</h2>
+      <h2 id="h-review" tabindex="-1">Review transactions</h2>
       <p>Rules assign each transaction to an account. Review what's left, fix anything wrong, and match transfers between your accounts.</p>
     </div>
     <div class="card" id="review-summary"></div>
@@ -615,7 +661,7 @@ main { padding-block: 24px 120px; }
     </div>
   </section>
 
-  <!-- Step 4: Export -->
+  <!-- Step 5: Export -->
   <section class="panel" id="panel-export" data-step="export" aria-labelledby="h-export" hidden>
     <div class="panel-head">
       <h2 id="h-export" tabindex="-1">Download your books</h2>
@@ -624,7 +670,7 @@ main { padding-block: 24px 120px; }
     <div class="card" id="export-summary"></div>
     <div class="card" id="export-tb"></div>
   </section>
-  <footer class="app-foot" id="app-foot">Statements to Books <span class="num" id="app-ver"></span>. Runs entirely in your browser.</footer>
+  <footer class="app-foot" id="app-foot">Statements to Books <span class="num" id="app-ver"></span>.</footer>
 </main>
 
 <input id="setup-input" type="file" accept=".json,application/json" hidden>
@@ -643,7 +689,7 @@ main { padding-block: 24px 120px; }
 (() => {
   'use strict';
   if (!document.documentElement.lang) document.documentElement.lang = 'en';   // the host wrapper has no lang (P5-4)
-  const APP_VERSION = '1.9';   // P10-2: footer, and the Overview sheet (P10-5)
+  const APP_VERSION = '2.0';   // P10-2: footer, and the Overview sheet (P10-5)
   document.getElementById('app-ver').textContent = 'v' + APP_VERSION;
 
   // ---------- App state (money in integer cents throughout) ----------
@@ -656,8 +702,11 @@ main { padding-block: 24px 120px; }
     rulesDirty: false,
     manual: new Map(),   // txn key → account no (0 = keep uncategorized). Survives txn rebuilds (flip, re-read).
     noMatch: new Map(),  // txn key → partner key, for pairs the user unlinked
-    review: { tab: 'txns', filter: 'all', source: '', account: '', q: '', page: 0, pageSize: 100, sel: new Set(), draft: null, msg: null,
+    review: { tab: 'txns', filter: 'all', source: '', account: '', q: '', page: 0, pageSize: 100, sel: new Set(), draft: null, newAcct: null, msg: null,
       importMode: 'replace', coaImport: null },   // P6-6/7: "When opening" choice; the chart-of-accounts import being previewed
+    cz: { pick: new Map(), acct: new Map(), rule: new Set(), msg: null,   // P14-4 (D86): Categorize suggestions: ticked groups, chosen accounts, "also add a rule" groups, status line
+      file: new Map(), fileRule: new Map(), fileErr: '' },   // P14-5 (D87): categories from the files: per-category edits, ticked rule proposals, batch error
+    cats: new Map(),   // P14-5 (D87): category key (catKey) → {kind:'acct', no} | {kind:'transfer'} | {kind:'ignore'}; not in the setup file
     company: '',   // optional company name for the report headers (P6-5)
     isCols: 'total',   // Income Statement columns: 'total' | 'month' | 'quarter' (P6-10)
   };
@@ -682,7 +731,10 @@ main { padding-block: 24px 120px; }
         const ob = state.sources.filter(s => s.openingCents == null).length;
         return `Enter the opening balance for ${ob === 1 ? '1 file' : ob + ' files'}.`;
       } },
-    { id: 'review', name: 'Review', hint: 'Categorize',
+    // P14-2 (D84): suggestions step; nothing to block on, visiting it changes no books
+    { id: 'categorize', name: 'Categorize', hint: 'Suggestions',
+      complete: () => true, blocker: '' },
+    { id: 'review', name: 'Review', hint: 'Check every row',
       complete: () => true,  // uncategorized rows post to 4999/6999; export warns (SPEC §4)
       blocker: '' },
     { id: 'export', name: 'Export', hint: 'Download workbook',
@@ -700,6 +752,7 @@ main { padding-block: 24px 120px; }
     if (state.step !== id) hideToast();   // P6-12 / N1: an Undo belongs to the step it was offered on
     state.step = id;
     if (id === 'map') renderMap();
+    if (id === 'categorize') { state.cz.msg = null; state.cz.fileErr = ''; syncSourceAccounts(); categorize(); renderCategorize(); }   // P14-2 (D84)
     if (id === 'review') { syncSourceAccounts(); categorize(); renderReview(); }
     if (id === 'export') prepareExport();
     for (const p of document.querySelectorAll('.panel')) p.hidden = p.dataset.step !== id;
@@ -738,14 +791,16 @@ main { padding-block: 24px 120px; }
     back.disabled = cur === 0;
     if (cur === STEPS.length - 1) {
       const X = state.exp;
-      next.textContent = X && X.busy ? 'Building workbook…' : 'Download workbook';
+      next.textContent = X && X.busy ? 'Building workbook…' : 'Download workbook'; next.dataset.to = '';
       const blocked = !X || !X.J ? 'Preparing the books…' : X.B.tbCheck !== 0 ? 'Debits and credits don\'t match, so the workbook can\'t be built.' : '';
       next.disabled = !!blocked || !!(X && X.busy);
       reason.textContent = blocked;
       next.title = blocked;
     } else {
       const nextStep = STEPS[cur + 1];
-      next.innerHTML = `Continue<span class="to"> to ${nextStep.name}</span>`;
+      // P14-1 (D82): rewrite the label only when it changes. A blur render() between mousedown and mouseup used to replace
+      // the span under the pointer, and Chrome then drops the click (the "0 isn't accepted" report on desktop widths).
+      if (next.dataset.to !== nextStep.id) { next.innerHTML = `Continue<span class="to"> to ${nextStep.name}</span>`; next.dataset.to = nextStep.id; }
       const ok = STEPS[cur].complete();
       next.disabled = !ok;
       const b = STEPS[cur].blocker, msg = ok ? '' : (typeof b === 'function' ? b() : b);
@@ -1093,6 +1148,18 @@ main { padding-block: 24px 120px; }
     amount:    h => /\b(amount|amt|value|transaction amount)\b/.test(h) && !/\b(balance|cents)\b/.test(h),
     balance:   h => /\bbalance\b/.test(h),
   };
+  // P14-5 (D87): headers that hold a category, best first (exact normalized header). "class" is never one (QuickBooks classes are
+  // not accounts). A bare "Account" is often the bank account itself (one value on every row), so a column needs >= 2 distinct text values.
+  const CAT_HEADS = [/^(category|categories|transaction category|expense category)$/, /^split$/, /^(account name|gl account)$/, /^account$/];
+  const CAT_NAME_HEAD = /^(account name|gl account)$/;
+  function catTextual(rows, c) {
+    const seen = new Set(); let text = 0, n = 0;
+    for (const r of rows) {
+      const v = r[c]; if (isBlank(v) || (typeof v === 'string' && !v.trim())) continue;
+      n++; if (typeof v === 'string' && !looksMoney(v) && !looksDate(v)) { text++; seen.add(v.replace(/\s+/g, ' ').trim().toLowerCase()); }
+    }
+    return seen.size >= 2 && text * 2 >= n;
+  }
   let detectHeaderOverride = null;
   // Best description header first: "Description" beats "Payee" beats "Memo" beats a bare "Transaction".
   const DESC_RANK = [/\b(description|desc)\b/, /\b(payee|merchant|name)\b/, /\b(memo|details?|narrative|particulars)\b/, /\btransaction\b/];
@@ -1149,7 +1216,7 @@ main { padding-block: 24px 120px; }
   function autoMap(src) {
     const grid = src.grid, notes = [];
     const header = detectHeaderOverride ?? detectHeader(grid);
-    const m = { header, date: null, transDate: null, desc: null, mode: 'single', amount: null, debit: null, credit: null, balance: null };
+    const m = { header, date: null, transDate: null, desc: null, mode: 'single', amount: null, debit: null, credit: null, balance: null, category: null };   // category: P14-5 (D87)
     const rows = grid.slice(header + 1, header + 1 + 200);   // sample for content checks
     const cols = [...Array(src.colCount).keys()];
 
@@ -1163,10 +1230,14 @@ main { padding-block: 24px 120px; }
         const exact = cols.find(c => /^date$/.test(heads[c]));
         m.date = exact ?? trans ?? take('date');
       }
-      const used = () => [m.date, m.transDate, m.desc, m.amount, m.debit, m.credit, m.balance].filter(c => c != null);
-      for (const r of DESC_RANK) {
-        const c = cols.find(c => heads[c] && !used().includes(c) && r.test(heads[c]) && ROLE_RULES.desc(heads[c]));
-        if (c != null) { m.desc = c; break; }
+      const used = () => [m.date, m.transDate, m.desc, m.amount, m.debit, m.credit, m.balance, m.category].filter(c => c != null);
+      // P14-5 (D87): "Account Name" / "GL Account" hold the category, so they are only a description when nothing else is.
+      for (const skipCat of [true, false]) {
+        for (const r of DESC_RANK) {
+          const c = cols.find(c => heads[c] && !used().includes(c) && r.test(heads[c]) && ROLE_RULES.desc(heads[c]) && !(skipCat && CAT_NAME_HEAD.test(heads[c])));
+          if (c != null) { m.desc = c; break; }
+        }
+        if (m.desc != null) break;
       }
       m.debit = take('debit', used());
       m.credit = take('credit', used());
@@ -1181,7 +1252,7 @@ main { padding-block: 24px 120px; }
     }
 
     // Fill anything still missing from content (also the whole job when there is no header row).
-    const taken = () => [m.date, m.desc, m.amount, m.debit, m.credit, m.balance].filter(c => c != null);
+    const taken = () => [m.date, m.desc, m.amount, m.debit, m.credit, m.balance, m.category].filter(c => c != null);
     if (m.date == null) {
       const free = cols.filter(c => !taken().includes(c));
       const top = f => free.map(c => [c, f(c)]).sort((a, b) => b[1] - a[1])[0];
@@ -1215,6 +1286,15 @@ main { padding-block: 24px 120px; }
       }).sort((a, b) => b[1] - a[1]);
       if (texts[0] && texts[0][1] > 0) m.desc = texts[0][0];
     }
+    // P14-5 (D87): an optional category column (CSV/Excel with a header row only). Chosen last, from columns no other role uses,
+    // so the description fallback above can never take it, and never from a guess at the contents.
+    if (header >= 0) {
+      const heads = grid[header].map(v => norm(v)), free = cols.filter(c => heads[c] && ![m.date, m.transDate, m.desc, m.amount, m.debit, m.credit, m.balance].includes(c));
+      for (const re of CAT_HEADS) {
+        const c = free.find(c => re.test(heads[c]) && catTextual(rows, c));
+        if (c != null) { m.category = c; notes.push(`Using "${grid[header][c]}" as the category column. You review these categories on the next step.`); break; }
+      }
+    }
     src.map = m; src.mapNotes = notes;
     validateMap(src);
   }
@@ -1227,7 +1307,7 @@ main { padding-block: 24px 120px; }
     if (m.desc == null) errs.push('Choose the description column.');
     if (m.mode === 'single' && m.amount == null) errs.push('Choose the amount column.');
     if (m.mode === 'split' && (m.debit == null || m.credit == null)) errs.push('Choose both the money-out and money-in columns.');
-    const picked = [m.date, m.desc, ...(m.mode === 'single' ? [m.amount] : [m.debit, m.credit]), m.balance].filter(c => c != null);
+    const picked = [m.date, m.desc, ...(m.mode === 'single' ? [m.amount] : [m.debit, m.credit]), m.balance, m.category].filter(c => c != null);
     if (new Set(picked).size !== picked.length) errs.push('Each column can only be used once.');
     // Rows without a date in the date column (junk rows, subtotals, a skipped header) are not transactions.
     const warns = [];
@@ -1440,8 +1520,9 @@ main { padding-block: 24px 120px; }
       let balanceCents = null;
       if (m.balance != null) { const b = parseMoney(r[m.balance]); if (b.cents != null) balanceCents = b.cents; }
       const desc = String(r[m.desc] ?? '').replace(/\s+/g, ' ').trim() || '(no description)';
+      const fileCat = m.category != null ? String(r[m.category] ?? '').replace(/\s+/g, ' ').trim().slice(0, 100) : '';   // P14-5 (D87)
       src.txns.push({ id: `${src.id}-${++seq}`, sourceId: src.id, date: d.iso, description: desc, amountCents: cents,
-        balanceCents, rowNo: src.rowNo[i], offsetAccountNo: null, ruleId: null, transferPairId: null });
+        balanceCents, rowNo: src.rowNo[i], offsetAccountNo: null, ruleId: null, transferPairId: null, fileCat });
     }
     txnStatsOf(src);
   }
@@ -1857,6 +1938,7 @@ main { padding-block: 24px 120px; }
     if (m.mode === 'split' && m.debit != null) roleOf[m.debit] = 'Money out';
     if (m.mode === 'split' && m.credit != null) roleOf[m.credit] = 'Money in';
     if (m.balance != null) roleOf[m.balance] = 'Balance';
+    if (m.category != null) roleOf[m.category] = 'Category';
     const moneyCols = new Set([m.amount, m.debit, m.credit, m.balance].filter(c => c != null));
 
     const headerOpts = ['<option value="-1"' + (m.header < 0 ? ' selected' : '') + '>None (first row is data)</option>']
@@ -1900,6 +1982,7 @@ main { padding-block: 24px 120px; }
             : `<div class="field"><label for="m-debit-${id}">Money out</label><select id="m-debit-${id}" data-m="debit" class="${m.debit == null ? 'missing' : ''}">${colOptions(s, m.debit, false)}</select></div>
                <div class="field"><label for="m-credit-${id}">Money in</label><select id="m-credit-${id}" data-m="credit" class="${m.credit == null ? 'missing' : ''}">${colOptions(s, m.credit, false)}</select></div>`}
           <div class="field"><label for="m-balance-${id}">Running balance</label><select id="m-balance-${id}" data-m="balance">${colOptions(s, m.balance, true, 'None')}</select></div>
+          <div class="field"><label for="m-category-${id}">Category <span class="opt">(optional)</span></label><select id="m-category-${id}" data-m="category"${m.category != null ? ` aria-describedby="m-category-n-${id}"` : ''}>${colOptions(s, m.category, true, 'None')}</select>${m.category != null ? `<span class="bal-note" id="m-category-n-${id}">Categories from this column are reviewed on the next step.</span>` : ''}</div>
           ${s.needsYear || s.yearOverride ? `<div class="field"><label for="yr-${id}">Statement year <span class="opt">(the dates have no year)</span></label><input class="money-in num ${s.needsYear && !s.yearOverride ? 'bad-in' : ''}" id="yr-${id}" data-year="1" type="text" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="e.g. 2025" value="${s.yearOverride || ''}"${s.needsYear && !s.yearOverride ? ` aria-describedby="yr-h-${id}"` : ''}>${s.needsYear && !s.yearOverride ? `<span class="bal-note" id="yr-h-${id}">The year the statement ends in.</span>` : ''}</div>` : ''}
         </div>
         <ul class="notes">${s.mapNotes.map(n => `<li>${esc(n)}</li>`).join('')}${(s.mapWarnings || []).map(n => `<li class="warn">${esc(n)}</li>`).join('')}${s.mapErrors.map(n => `<li class="err">${esc(n)}</li>`).join('')}</ul>
@@ -1932,7 +2015,7 @@ main { padding-block: 24px 120px; }
     for (const p of breaks) warnList.push(`The statement starting ${p.start || '?'} opens at ${show(p.ob)}, but the one before it ended at ${show(p.ob - p.chain)}. A statement may be missing.`);
     if (per.length > 1) for (const p of bad) warnList.push(`The statement ending ${p.end || '?'} doesn't add up: off by ${fmtCents(Math.abs(p.diff))}.`);
     const periodsTable = per.length > 1 ? `<div class="preview-wrap" tabindex="0" role="region" aria-label="Statements in ${esc(s.name)}"><table class="preview">
-        <thead><tr><th scope="col">Statement</th><th scope="col" class="money">${card ? 'Owed at start' : 'Opening'}</th><th scope="col" class="money">In · Out</th><th scope="col" class="money">${card ? 'Owed at end' : 'Ending'}</th><th scope="col">Check</th></tr></thead>
+        <thead><tr><th scope="col">Statement</th><th scope="col" class="money">${card ? 'Owed at start' : 'Opening'}</th><th scope="col" class="money">Rows in · out</th><th scope="col" class="money">${card ? 'Owed at end' : 'Ending'}</th><th scope="col">Check</th></tr></thead>
         <tbody>${per.map(p => `<tr><td class="num">${p.start || '?'} → ${p.end || '?'}</td><td class="money num">${show(p.ob)}</td><td class="money num">${p.nIn} · ${p.nOut}</td><td class="money num">${show(p.eb)}</td>
           <td>${p.ok === true ? '<span class="ok-t">Adds up</span>' : p.ok === false ? `<span class="bad-t">Off ${fmtCents(Math.abs(p.diff))}</span>` : '—'}${typeof p.chain === 'number' ? ' <span class="bad-t">· gap</span>' : ''}</td></tr>`).join('')}</tbody></table></div>` : '';
     const issues = s.txnIssues || [];
@@ -2044,7 +2127,7 @@ main { padding-block: 24px 120px; }
     }
     return `<div class="balances">
       <div class="fields">
-        <div class="field"><label for="ob-${id}">${L1}</label><input class="money-in num" id="ob-${id}" data-bal="ob" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" value="${val(s.obEntered, 'ob')}"></div>
+        <div class="field"><label for="ob-${id}">${L1}</label><input class="money-in num" id="ob-${id}" data-bal="ob" type="text" inputmode="decimal" autocomplete="off" placeholder="Required" aria-required="true" value="${val(s.obEntered, 'ob')}"></div>
         <div class="field"><label for="eb-${id}">${L2} <span class="opt">(from the statement)</span></label><input class="money-in num" id="eb-${id}" data-bal="eb" type="text" inputmode="decimal" autocomplete="off" placeholder="Optional" value="${val(s.ebEntered, 'eb')}"></div>
         <div class="field acct"><span class="lbl" id="t-l-${id}">Account type</span>
           <div class="seg" role="radiogroup" aria-labelledby="t-l-${id}">
@@ -2060,15 +2143,15 @@ main { padding-block: 24px 120px; }
       ${joinHtml(s)}
     </div>`;
   }
-  // P6-9: "Account in the books": its own account, or the account of another statement of the same type.
+  // P6-9 (P14-1: "Ledger account"): its own account, or the account of another statement of the same type.
   function linkFieldHtml(s) {
     const leads = state.sources.filter(x => x !== s && !x.sameAs && x.status === 'ready' && x.mapped && x.type === s.type);
     const g = groupOf(s);
     if (!leads.length && g.length < 2) return '';
     const more = x => groupOf(x).filter(m => m !== s).length;
     const own = `<option value=""${s.sameAs ? '' : ' selected'}>Its own account${!s.sameAs && g.length > 1 ? ` (with ${plural(g.length - 1, 'other statement')})` : ''}</option>`;
-    return `<div class="field"><label for="lk-${s.id}">Account in the books</label><select id="lk-${s.id}" data-acct="link">${own}${leads.map(x =>
-      `<option value="${x.id}"${s.sameAs === x.id ? ' selected' : ''}>Same as ${esc(clip(x.name, 40))}${more(x) > 1 ? ` (+${more(x) - 1} more)` : ''}</option>`).join('')}</select></div>`;
+    return `<div class="field"><label for="lk-${s.id}">Ledger account</label><select id="lk-${s.id}" data-acct="link">${own}${leads.map(x =>
+      `<option value="${x.id}"${s.sameAs === x.id ? ' selected' : ''}>Same account as ${esc(clip(x.name, 40))}${more(x) > 1 ? ` (+${more(x) - 1} more)` : ''}</option>`).join('')}</select></div>`;
   }
   function joinHtml(s) {
     const g = groupOf(s); if (g.length < 2) return '';
@@ -2099,7 +2182,7 @@ main { padding-block: 24px 120px; }
         <div><dt>Transactions</dt><dd class="num">${st.count.toLocaleString()}</dd></div>
         <div><dt>Money in</dt><dd class="num">${fmtCents(st.inCents)} <small>· ${st.nIn}</small></dd></div>
         <div><dt>Money out</dt><dd class="num">${fmtCents(st.outCents)} <small>· ${st.nOut}</small></dd></div>
-        <div><dt>Net</dt><dd class="num">${fmtCents(st.netCents)}</dd></div>
+        <div><dt>Net change</dt><dd class="num">${fmtCents(st.netCents)}</dd></div>
         <div><dt>Dates</dt><dd class="num">${st.first ? `<span class="nw">${st.first}</span> → <span class="nw">${st.last}</span>` : '—'}</dd></div>
       </dl>
       ${issues.length ? `<div class="issues" role="status"><strong>${issues.length} row${issues.length === 1 ? '' : 's'} could not be read and ${issues.length === 1 ? 'is' : 'are'} left out.</strong><ul>${list}</ul>${issues.length > 5 ? `<span>and ${issues.length - 5} more</span>` : ''}</div>` : ''}
@@ -2131,8 +2214,9 @@ main { padding-block: 24px 120px; }
       const key = el.dataset.bal === 'ob' ? 'obEntered' : 'ebEntered';
       const r = parseMoney(el.value);
       s.balError = ''; s.balRaw = null;
-      if (r.error) { s.balError = `${el.dataset.bal === 'ob' ? 'Opening' : 'Ending'} balance: ${r.error}`; s.balRaw = { key: el.dataset.bal, text: el.value }; }   // keep what they typed (P5-1 L2)
+      if (r.error) { s.balError = `${el.dataset.bal === 'ob' ? 'Opening' : 'Ending'} balance: ${r.error}`; s.balRaw = { key: el.dataset.bal, text: el.value }; if (s.balEdit && s.balEdit.key === key) s[key] = s.balEdit.prev; }   // keep what they typed (P5-1 L2)
       else s[key] = r.blank ? null : r.cents;
+      s.balEdit = null;
       s.balAuto = false;
       if (s.balNote.startsWith('Filled')) s.balNote = 'Edited by you.';
       renderMap(); render(); return;
@@ -2140,6 +2224,17 @@ main { padding-block: 24px 120px; }
     if (el.dataset.acct === 'type') { s.type = el.value; s.typeGuessed = false; s.typeUser = true; s.typeFromPdf = false; if (s.balAuto) autoBalances(s); if (s.pdf) pdfPeriodChecks(s); renderSources(); renderMap(); render(); return; }
     if (el.dataset.acct === 'flip') { setFlip(s, el.checked); return; }
     if (el.dataset.acct === 'link') { doLink(s, el.value); return; }
+  });
+  // P14-1 (D82): a balance counts while you type, so Continue is enabled before the field loses focus (a click on a
+  // disabled Continue was swallowed, so "0" looked rejected). No re-render here: render() only redraws the stepper and bar.
+  $('map-list').addEventListener('input', e => {
+    const el = e.target; if (!el.dataset || !el.dataset.bal) return;
+    const card = el.closest('.map-card'), s = card && state.sources.find(x => x.id === card.dataset.id); if (!s) return;
+    const key = el.dataset.bal === 'ob' ? 'obEntered' : 'ebEntered';
+    if (!s.balEdit || s.balEdit.key !== key) s.balEdit = { key, prev: s[key] };   // the change handler restores it on bad input
+    const r = parseMoney(el.value);
+    s[key] = r.error || r.blank ? null : r.cents;   // invalid text never enables Continue
+    s.balAuto = false; syncBalances(s); render();
   });
   $('map-list').addEventListener('click', e => {
     const rm = e.target.closest('[data-remove-src]'); if (rm) { removeSource(rm.dataset.removeSrc); return; }
@@ -2402,6 +2497,7 @@ main { padding-block: 24px 120px; }
     for (const r of state.rules) if (set.has(r.accountNo)) { r.accountNo = null; rules++; }
     for (const r of state.applied) if (set.has(r.accountNo)) r.accountNo = null;
     for (const [k, v] of state.manual) if (set.has(v)) { state.manual.delete(k); manual++; }
+    for (const [k, v] of state.cats) if (v.kind === 'acct' && set.has(v.no)) state.cats.delete(k);   // P14-5: a file category mapped to it
     return { manual, rules };
   }
   function parseAcctNo(v, self = null) {
@@ -2434,6 +2530,7 @@ main { padding-block: 24px 120px; }
       for (const x of state.rules) if (x.accountNo === no) x.accountNo = r.no;
       for (const x of state.applied) if (x.accountNo === no) x.accountNo = r.no;
       for (const [k, v] of state.manual) if (v === no) state.manual.set(k, r.no);
+      for (const v of state.cats.values()) if (v.kind === 'acct' && v.no === no) v.no = r.no;   // P14-5
       indexCoa(); return '';
     }
     return 'Unknown field.';
@@ -2442,13 +2539,14 @@ main { padding-block: 24px 120px; }
     let manual = 0; for (const v of state.manual.values()) if (v === no) manual++;
     // A rule counts while either copy uses the account: the edited one (Rules tab) or the applied one (not re-run yet, LINT A3).
     const rules = new Set([...state.rules, ...state.applied].filter(r => r.accountNo === no).map(r => r.id)).size;
-    return { rules, manual, rows: state.txns.filter(t => t.offsetAccountNo === no).length };
+    let cats = 0; for (const v of state.cats.values()) if (v.kind === 'acct' && v.no === no) cats++;   // P14-5: file categories mapped to it
+    return { rules, manual, cats, rows: state.txns.filter(t => t.offsetAccountNo === no).length };
   }
   function coaDelete(no) {
     const a = acctByNo.get(no); if (!a) return 'That account no longer exists.';
     if (a.system) return `${a.no} is a system account and can't be deleted.`;
     const u = coaUse(no);
-    if (u.rules || u.manual) return `${a.no} · ${a.name} is used by ${[u.rules && `${u.rules} rule${u.rules === 1 ? '' : 's'}`, u.manual && `${u.manual} row${u.manual === 1 ? '' : 's'} you assigned`].filter(Boolean).join(' and ')}. Move them to another account first.`;
+    if (u.rules || u.manual || u.cats) return `${a.no} · ${a.name} is used by ${[u.rules && `${u.rules} rule${u.rules === 1 ? '' : 's'}`, u.manual && `${u.manual} row${u.manual === 1 ? '' : 's'} you assigned`, u.cats && `${plural(u.cats, 'category', 'categories')} from your files`].filter(Boolean).join(' and ')}. Move them to another account first.`;
     state.coa = state.coa.filter(x => x !== a); indexCoa();
     return '';
   }
@@ -2512,7 +2610,155 @@ main { padding-block: 24px 120px; }
   const dayNo = d => Math.round(Date.parse(d + 'T00:00:00Z') / 86400000);
   const srcOf = t => state.sources.find(s => s.id === t.sourceId);
 
-  // Rules → transfer matcher → final account. Precedence: manual > matched transfer pair (1950) > first rule > uncategorized.
+  // ---------- Categories read from the file (P14-5, D87) ----------
+  // A CSV/Excel column of categories ("Category", QuickBooks' "Split", "Account") says what each row is. Once the user applies the
+  // plan on the Categorize step, the rows of that file go to exactly the account their category was mapped to (state.cats):
+  // manual > file category > transfer pair > rule. Nothing is created or mapped before that; catPlan() and catMatch() are pure.
+  const catKey = s => String(s ?? '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const catSig = s => JSON.stringify([s.hash, s.sheetName, s.map ? s.map.header : null, s.map ? s.map.category : null]);   // the mapping a decision belongs to (flips and type changes don't change it)
+  const catSrcs = () => state.sources.filter(s => s.status === 'ready' && s.mapped && s.kind !== 'pdf' && s.map && s.map.category != null && s.txns && s.txns.some(t => t.fileCat));   // a category column with at least one category
+  const catPending = s => s.catOn !== catSig(s) && s.catOn !== 'skip:' + catSig(s);   // catOn: the sig once applied, 'skip:' + sig once skipped
+  // QuickBooks / Xero style category names → the default chart. Written from memory, not from real exports (like D52): a name
+  // that is missing here just becomes a new account the user reviews. Keys are compared with catKey, targets only if they exist.
+  const CAT_SYN_RAW = [
+    [3200, ["owner's draw", "owner's draws", 'owner draw', 'owners draw', 'owner draws', 'personal', 'personal expenses', 'draws', 'drawings']],
+    [3100, ["owner's contribution", "owner's investment", 'owner contribution', 'owner investment', 'owners contribution', 'capital contribution']],
+    [6400, ['meals & entertainment', 'meals and entertainment', 'meals and entertainment expense']],
+    [6050, ['bank service charges', 'bank charges', 'bank fees', 'service charges']],
+    [6500, ['car & truck', 'car and truck expenses', 'automobile', 'automobile expense', 'vehicle expenses', 'gas & fuel', 'fuel']],
+    [6600, ['dues & subscriptions', 'subscriptions', 'dues and subscriptions']],
+    [6350, ['insurance', 'insurance expense']],
+    [6660, ['rent or lease', 'rent & lease', 'rent']],
+    [6750, ['telephone', 'telephone expense', 'phone', 'internet']],
+    [6200, ['payroll expenses', 'payroll', 'wages', 'salaries', 'salaries & wages']],
+    [4000, ['sales', 'income', 'sales of product income', 'sales income', 'revenue', 'sales revenue']],
+    [4100, ['services', 'service', 'service income', 'services income']],
+    [4800, ['interest earned']],
+    [5000, ['cost of goods sold', 'cogs', 'cost of sales', 'purchases']],
+    [6150, ['contractors', 'subcontractors', 'contract labor expense']],
+    [6800, ['legal & professional fees', 'legal & professional services', 'professional services', 'legal fees', 'accounting']],
+    [6900, ['taxes & licenses', 'licenses & permits', 'taxes']],
+    [6550, ['office supplies & software', 'office expenses', 'office expense']],
+    [6700, ['utilities expense']],
+    [6450, ['travel expenses']],
+    [6000, ['advertising & marketing', 'advertising', 'marketing', 'advertising & promotion']],
+    [2500, ['loan payable', 'loan', 'loans', 'notes payable']],
+    [6850, ['repair & maintenance', 'repairs']],
+    [6950, ['shipping & delivery', 'postage & delivery', 'shipping']],
+    [6100, ['merchant account fees', 'merchant fees', 'credit card processing fees']],
+  ];
+  const CAT_SYN = new Map(); for (const [no, names] of CAT_SYN_RAW) for (const n of names) CAT_SYN.set(catKey(n), no);
+  // The type a new account gets from its name (null = decide by the rows' sign). Equity, then liabilities, then taxes paid.
+  function catTypeHint(key) {
+    if (/\b(draws?|distributions?|contributions?|owners?)\b/.test(key) && !/\b(charit\w*|donations?|pension|retirement|401k?|ira|employee)\b/.test(key)) return 'Equity';
+    if (/\b(payable|credit line|line of credit|loans?)\b/.test(key) && !/\b(interest|fees?)\b/.test(key)) return 'Liability';
+    if (/\btax(es)?\b/.test(key)) return 'Expense';                                  // sales tax / income tax paid (a payable was caught above)
+    if (/\b(cost of goods|cost of sales|cogs|materials|inventory)\b/.test(key)) return 'COGS';
+    if (/\b(income|sales|revenue|fees earned|refunds? received)\b/.test(key)) return 'Revenue';
+    return null;
+  }
+  // Defaults for a new account made from a category: the name as written, the type from the name else the rows' majority sign
+  // (money out → Expense, in → Revenue, ties → Expense), the next free number (adds it to `used`), and the Schedule C line.
+  function catNewForm(text, used, rows) {
+    const name = String(text).replace(/\s+/g, ' ').trim().slice(0, 100), hint = catTypeHint(catKey(name));
+    const type = hint || (rows && rows.in > rows.out ? 'Revenue' : 'Expense');
+    const no = nextAcctNo(type, used); if (no != null) used.add(no);
+    const label = { Equity: 'owner equity', Liability: 'a loan or payable', COGS: 'cost of goods sold', Revenue: 'income', Expense: 'an expense' }[type];
+    return { name, type, no, taxLine: defaultTaxLine(type, name), how: hint ? `Not in your chart yet. The name looks like ${label}.` : `Not in your chart yet. Most of its rows are money ${type === 'Revenue' ? 'in' : 'out'}, so it starts as ${type === 'Revenue' ? 'income' : 'an expense'}.` };
+  }
+  function catCtx() {
+    const byName = new Map(), first = new Map();
+    for (const a of state.coa) if (!a.sourceId && a.no !== UNC_IN && a.no !== UNC_OUT && !byName.has(catKey(a.name))) byName.set(catKey(a.name), a);
+    // first word: default and user accounts only (a system account like Opening Balance Equity never matches a bare word)
+    for (const a of state.coa) if (!a.sourceId && !a.system) { const w = catKey(a.name).split(' ')[0]; if (w) first.set(w, (first.get(w) || []).concat(a)); }
+    const srcKeys = new Set(); for (const s of state.sources) if (s.name) srcKeys.add(catKey(s.name));
+    for (const a of state.coa) if (a.sourceId) srcKeys.add(catKey(a.name));
+    return { used: new Set(state.coa.map(a => a.no)), srcKeys, byName, first, rows: { in: 0, out: 0 } };
+  }
+  // One distinct category text → what to do with it. Pure except that a new account's number is added to ctx.used (so a batch
+  // never hands out one number twice). Order: account number · ignore · transfer · chart name (full, last part, parent) · QuickBooks
+  // synonym · first word of one chart name · new account.
+  function catMatch(name, ctx = catCtx()) {
+    const text = String(name ?? '').replace(/\s+/g, ' ').trim();
+    const acct = (no, how) => {
+      if (no === TRANSFER_NO) return { kind: 'transfer', how: 'This is your Transfer Clearing account.' };
+      if (no === UNC_IN || no === UNC_OUT) return { kind: 'ignore', how: 'This is an uncategorized account, so the rows stay uncategorized.' };
+      return { kind: 'acct', no, how };
+    };
+    let base = text;
+    const nm = /^(\d{3,6})(?:\s*([·•\-–—:|])\s*|\s+)(.+)$/.exec(text) || /^(\d{3,6})$/.exec(text);
+    if (nm) {
+      const no = +nm[1], rest = (nm[3] || '').trim();
+      if (acctByNo.has(no)) {
+        const a = acctByNo.get(no);
+        if (a.sourceId) return { kind: 'transfer', how: `${no} is the account of one of your uploaded files.` };
+        return acct(no, `Account number ${no} in your file is ${a.name}.`);
+      }
+      const type = Object.keys(NO_RANGE).find(t => no >= NO_RANGE[t][0] && no <= NO_RANGE[t][1]);
+      if (type && rest) {
+        if (!ctx.used.has(no) && (nm[2] || no < 1900 || no > 2100)) {   // a bare year-like number ("2024 Taxes") is not an account number
+          ctx.used.add(no);
+          return { kind: 'new', name: rest.slice(0, 100), type, no, taxLine: defaultTaxLine(type, rest), how: `Account number ${no} in your file is not in your chart yet.`, fromNumber: true };
+        }
+        if (ctx.used.has(no)) base = rest;   // number taken by another new account in this batch: match the name alone
+      }
+    }
+    const key = catKey(base);
+    if (!key) return { kind: 'ignore', how: 'No usable category text, so these rows stay uncategorized.' };
+    if (/^uncategorized\b/.test(key) || /^ask my accountant\b/.test(key)) return { kind: 'ignore', how: 'Not a real category, so these rows stay uncategorized.' };
+    if (key === 'split') return { kind: 'ignore', how: 'A split transaction: the page can\'t see its parts, so these rows stay uncategorized.' };
+    if (ctx.srcKeys.has(key)) return { kind: 'transfer', how: 'Same name as one of your uploaded accounts: a transfer between your accounts.' };
+    if (/\b(transfers?|xfer|credit card payments?|payment thank you|autopay|online payment)\b/.test(key)) return { kind: 'transfer', how: 'Looks like a transfer or card payment between your accounts.' };
+    const parts = base.includes(':') ? base.split(':').map(catKey).filter(Boolean) : [];
+    const cands = [key, ...parts.slice().reverse()].filter((k, i, a) => k && a.indexOf(k) === i), part = i => i === 0 ? 'This name matches' : i === 1 ? 'Its last part matches' : 'Its parent matches';
+    for (let i = 0; i < cands.length; i++) { const a = ctx.byName.get(cands[i]); if (a) return acct(a.no, `${part(i)} ${a.no} · ${a.name}.`); }
+    for (let i = 0; i < cands.length; i++) { const no = CAT_SYN.get(cands[i]); if (no != null && acctByNo.has(no)) return acct(no, `A common name for ${no} · ${acctByNo.get(no).name}.`); }
+    for (let i = 0; i < cands.length; i++) { const l = !cands[i].includes(' ') && ctx.first.get(cands[i]); if (l && l.length === 1) return acct(l[0].no, `The first word of ${l[0].no} · ${l[0].name}.`); }
+    const f = catNewForm(base, ctx.used, ctx.rows);
+    return { kind: 'new', name: f.name, type: f.type, no: f.no, taxLine: f.taxLine, how: f.how };
+  }
+  // Pending categories (sources whose categories were neither applied nor skipped for the current mapping) and the rules worth
+  // adding. A rule is proposed for a merchant + direction only when every row of it, in the pending files, has one category (>= 2
+  // rows), that category goes to an account, the rule would hit no row of another category, and no rule already gives those rows
+  // the account. The account of a rule is the one the user finally picks, so it is resolved when applying.
+  function catPlan() {
+    const srcs = catSrcs().filter(catPending), ids = new Set(srcs.map(s => s.id)), items = new Map();
+    for (const s of srcs) for (const t of s.txns) {
+      if (!t.fileCat) continue;
+      const k = catKey(t.fileCat);
+      let it = items.get(k); if (!it) items.set(k, it = { key: k, name: t.fileCat, rows: { in: 0, out: 0 }, n: 0, files: new Set() });
+      it.n++; it.rows[t.amountCents > 0 ? 'in' : 'out']++; it.files.add(s.name);
+    }
+    const ctx = catCtx(), order = [...items.values()];
+    for (const it of order) {
+      const prior = state.cats.get(it.key); ctx.rows = it.rows;
+      it.match = prior && (prior.kind !== 'acct' || acctByNo.has(prior.no)) ? { ...prior, how: 'Same as in a file you applied earlier.' } : catMatch(it.name, ctx);
+    }
+    const G = new Map();
+    for (const s of srcs) for (const t of s.txns) {
+      if (!t.amountCents || t.norm == null) continue;
+      const mk = mkOf(t); if (!mk) continue;
+      const dir = t.amountCents > 0 ? 'in' : 'out', gk = mk + '|' + dir;
+      let g = G.get(gk); if (!g) G.set(gk, g = { id: gk, mk, dir, cats: new Set(), rows: [] });
+      g.cats.add(catKey(t.fileCat)); g.rows.push(t);
+    }
+    const rules = [], byKey = new Map(order.map(it => [it.key, it]));
+    for (const g of G.values()) {
+      if (g.cats.size !== 1 || g.rows.length < 2) continue;
+      const ck = [...g.cats][0], it = byKey.get(ck); if (!it || (it.match.kind !== 'acct' && it.match.kind !== 'new')) continue;
+      const needle = normDesc(g.mk), hit = t => t.norm != null && t.norm.includes(needle) && (g.dir === 'in' ? t.amountCents > 0 : t.amountCents < 0);
+      if (state.txns.some(t => t.fileCat && hit(t) && catKey(t.fileCat) !== ck)) continue;   // would pull a row of another category
+      const no = it.match.kind === 'acct' ? it.match.no : null;
+      if (no != null && g.rows.every(t => t.ruleAccountNo === no)) continue;                 // a rule already does this
+      if (no != null && state.applied.some(x => ruleKey(x) === ruleKey({ match: 'contains', pattern: g.mk, direction: g.dir, accountNo: no }))) continue;
+      rules.push({ id: g.id, mk: g.mk, dir: g.dir, catKey: ck, n: g.rows.length, other: state.txns.filter(t => !ids.has(t.sourceId) && hit(t)).length });
+    }
+    order.sort((a, b) => b.n - a.n);
+    rules.sort((a, b) => b.n - a.n || (a.id < b.id ? -1 : 1));
+    return { items: order, rules, srcs };
+  }
+
+  // Rules → transfer matcher → final account. Precedence: manual > file category (P14-5) > matched transfer pair (1950) > first rule > uncategorized.
   // A transfer-keyword hit with no matched pair stays uncategorized and is flagged "possible transfer" (D19).
   function categorize() {
     const txns = [], srcIdx = new Map(), srcNo = new Map();
@@ -2527,9 +2773,17 @@ main { padding-block: 24px 120px; }
     // Rule results are reused while the rules (and the source account numbers) are unchanged.
     const sig = JSON.stringify(rules.map(({ r }) => [r.id, r.match, r.pattern, r.accountNo, r.direction, r.priority])) + JSON.stringify([...srcNo]);
     const ruleAcct = new Map(state.applied.map(r => [r.id, r.accountNo]));
+    const catOn = new Set(state.sources.filter(s => s.catOn && s.catOn === catSig(s)).map(s => s.id));   // P14-5 (D87): files whose categories were applied
     for (const t of txns) {
       t.transferPairId = null; t.pairWith = null; t.possibleTransfer = false;
       t.manual = state.manual.has(t.key); t.noMatch = state.noMatch.has(t.key);
+      t.fileAcct = null; t.fileTransfer = false; t.fromFile = false;   // file category: manual > file category > transfer pair > rule
+      if (t.fileCat && catOn.has(t.sourceId)) {
+        if (t.fkSrc !== t.fileCat) { t.fk = catKey(t.fileCat); t.fkSrc = t.fileCat; }
+        const c = state.cats.get(t.fk);
+        if (c && c.kind === 'acct' && acctByNo.has(c.no) && c.no !== srcNo.get(t.sourceId)) t.fileAcct = c.no;
+        else if (c && c.kind === 'transfer') t.fileTransfer = true;
+      }
       if (t.rsig !== sig) {
         t.rsig = sig; t.ruleId = null;
         const own = srcNo.get(t.sourceId);
@@ -2545,10 +2799,11 @@ main { padding-block: 24px 120px; }
     const hits = new Map();
     for (const t of txns) {
       if (t.manual) t.offsetAccountNo = state.manual.get(t.key) || null;
+      else if (t.fileAcct != null) { t.offsetAccountNo = t.fileAcct; t.fromFile = true; }
       else if (t.transferPairId) t.offsetAccountNo = TRANSFER_NO;
-      else if (t.ruleAccountNo === TRANSFER_NO) { t.offsetAccountNo = null; t.possibleTransfer = true; }
+      else if (t.fileTransfer || t.ruleAccountNo === TRANSFER_NO) { t.offsetAccountNo = null; t.possibleTransfer = true; }
       else t.offsetAccountNo = t.ruleAccountNo;
-      if (t.ruleId && !t.manual && !t.transferPairId) hits.set(t.ruleId, (hits.get(t.ruleId) || 0) + 1);
+      if (t.ruleId && !t.manual && !t.transferPairId && !t.fromFile && !t.fileTransfer) hits.set(t.ruleId, (hits.get(t.ruleId) || 0) + 1);
     }
     for (const r of state.rules) r.hits = hits.get(r.id) || 0;
     for (const r of state.applied) r.hits = hits.get(r.id) || 0;
@@ -2564,8 +2819,8 @@ main { padding-block: 24px 120px; }
   function matchTransfers(txns) {
     const buckets = new Map();
     for (const t of txns) {
-      if (t.manual || t.noMatch || !t.amountCents) continue;
-      if (t.ruleAccountNo != null && t.ruleAccountNo !== TRANSFER_NO) continue;
+      if (t.manual || t.noMatch || !t.amountCents || t.fileAcct != null) continue;   // P14-5: a row your file put on an account is not paired
+      if (!t.fileTransfer && t.ruleAccountNo != null && t.ruleAccountNo !== TRANSFER_NO) continue;
       const k = Math.abs(t.amountCents);
       if (!buckets.has(k)) buckets.set(k, []);
       buckets.get(k).push(t);
@@ -2577,7 +2832,7 @@ main { padding-block: 24px 120px; }
       for (const p of pos) for (const n of neg) {
         if (p.sourceId === n.sourceId || p.acct === n.acct) continue;   // same file, or two statements of one account (P6-9)
         const gap = Math.abs(p.day - n.day);
-        if (gap <= 3) cands.push({ p, n, gap, kw: (p.ruleAccountNo === TRANSFER_NO) + (n.ruleAccountNo === TRANSFER_NO) });
+        if (gap <= 3) cands.push({ p, n, gap, kw: (p.fileTransfer || p.ruleAccountNo === TRANSFER_NO) + (n.fileTransfer || n.ruleAccountNo === TRANSFER_NO) });
       }
     }
     cands.sort((a, b) => a.gap - b.gap || b.kw - a.kw || Math.min(a.p.day, a.n.day) - Math.min(b.p.day, b.n.day));
@@ -2769,8 +3024,7 @@ main { padding-block: 24px 120px; }
       stats: { added, renamed, removed, typeKept, dropped, dup, ruleReset, manualReset, rulesAdded: fresh.length } };
   }
   function applyImport(R) {
-    const before = { coa: state.coa.map(a => ({ ...a })), rules: state.rules.map(r => ({ ...r })), applied: state.applied.map(r => ({ ...r })),
-      manual: new Map(state.manual), dirty: state.rulesDirty, company: state.company };
+    const before = snapAll();
     state.coa = R.coa; indexCoa();
     // A choice you made that points at an account that is gone is reset, so nothing posts to a missing account.
     for (const [k, v] of state.manual) if (v && !acctByNo.has(v)) state.manual.delete(k);
@@ -2782,9 +3036,15 @@ main { padding-block: 24px 120px; }
     return before;
   }
   function applySetup(p, mode = 'replace') { const R = importResult(p, mode); return { before: applyImport(R), reset: R.stats.manualReset, R }; }
+  // One snapshot shape for every Undo that edits the chart, rules or choices (setup file, COA import, suggestions, new account, file categories).
+  const snapAll = () => ({ coa: state.coa.map(a => ({ ...a })), rules: state.rules.map(r => ({ ...r })), applied: state.applied.map(r => ({ ...r })),
+    manual: new Map(state.manual), dirty: state.rulesDirty, company: state.company,
+    cats: new Map([...state.cats].map(([k, v]) => [k, { ...v }])), catOn: new Map(state.sources.map(s => [s.id, s.catOn])) });   // cats/catOn: P14-5 (D87)
   function undoSetup(b) {
     state.coa = b.coa; indexCoa();
     state.rules = b.rules; state.applied = b.applied; state.manual = b.manual; state.rulesDirty = b.dirty; state.company = b.company;
+    if (b.cats) state.cats = b.cats;   // optional: older callers' snapshots have neither
+    if (b.catOn) for (const s of state.sources) if (b.catOn.has(s.id)) s.catOn = b.catOn.get(s.id);
     categorize();
   }
   async function saveSetup() {
@@ -2852,6 +3112,34 @@ main { padding-block: 24px 120px; }
     return COA_TYPES.get(k) || COA_TYPES.get(k.replace(/ies$/, 'y').replace(/s$/, '')) || null;
   }
   const NO_RANGE = { Asset: [1000, 1999], Liability: [2000, 2999], Equity: [3000, 3999], Revenue: [4000, 4998], COGS: [5000, 5999], Expense: [6000, 8999] };
+  // P14-3 (D85): the next free number for a new account of this type (D52): the next free multiple of 10 above the highest number
+  // used in the type's range, else the lowest free number in the range, else null. Shared by the COA import and "+ New account…".
+  function nextAcctNo(type, used) {
+    const [lo, hi] = NO_RANGE[type] || NO_RANGE.Expense;
+    let top = lo - 10; for (const n of used) if (n >= lo && n <= hi && n > top) top = n;
+    for (let n = Math.floor(top / 10) * 10 + 10; n <= hi; n += 10) if (!used.has(n)) return n;
+    for (let n = lo; n <= hi; n++) if (!used.has(n)) return n;
+    return null;
+  }
+  // P14-3 (D85): the Schedule C tag a new account starts with, so an untagged income/expense account doesn't show up as a
+  // difference on the Schedule C reconciliation. Name hints first (case-insensitive, word starts), then a catch-all by type.
+  // Expense hints apply to Expense accounts, income hints to Revenue; COGS and balance-sheet types skip them. The user can change it.
+  const TAX_HINTS_EXP = [
+    [/\bhealth\b.*\binsurance\b|\binsurance\b.*\bhealth\b/, 'X'],
+    [/\badvertis/, 'L8'], [/\bmeal/, 'L24b'], [/\btravel/, 'L24a'],
+    [/\b(utilit|electric|water|phone|internet)/, 'L25'],   // before fuel: "Gas & Electric" is a utility
+    [/\b(fuel|gas|auto|vehicle|mileage)\b/, 'L9'], [/\b(commission|merchant fee|processing fee)/, 'L10'], [/\b(contract labor|contractor)/, 'L11'],
+    [/\binsurance/, 'L15'], [/\b(legal|accounting|bookkeep|professional)/, 'L17'], [/\b(office|software|subscription)/, 'L18'],
+    [/\b(rent|lease)/, 'L20b'], [/\b(repair|maintenance)/, 'L21'], [/\bsuppl/, 'L22'], [/\b(tax|license|permit)/, 'L23'],
+    [/\b(wage|salar|payroll)/, 'L26'],
+  ];
+  const TAX_HINTS_REV = [[/\b(interest|dividend)/, 'X'], [/\b(return|allowance|refund)/, 'L2']];
+  function defaultTaxLine(type, name) {
+    const n = String(name ?? '').toLowerCase();
+    const hints = type === 'Expense' ? TAX_HINTS_EXP : type === 'Revenue' ? TAX_HINTS_REV : [];
+    for (const [re, tag] of hints) if (re.test(n)) return tag;
+    return type === 'Expense' ? 'V' : type === 'Revenue' ? 'L1' : type === 'COGS' ? 'L39' : '';
+  }
   function coaRoles(row) {
     const h = row.map(coaHead), used = new Set(), m = { no: null, name: null, type: null };
     for (const role of ['type', 'no', 'name']) for (const re of COA_COLS[role]) {
@@ -2923,11 +3211,7 @@ main { padding-block: 24px 120px; }
     const out = [];
     for (const a of accounts) {
       if (!a.auto) { out.push(a); continue; }
-      const [lo, hi] = NO_RANGE[a.type];
-      let top = lo - 10; for (const n of used) if (n >= lo && n <= hi && n > top) top = n;
-      let no = null;
-      for (let n = Math.floor(top / 10) * 10 + 10; n <= hi; n += 10) if (!used.has(n)) { no = n; break; }
-      if (no == null) for (let n = lo; n <= hi; n++) if (!used.has(n)) { no = n; break; }
+      const no = nextAcctNo(a.type, used), [lo, hi] = NO_RANGE[a.type];
       if (no == null) { skipped.push({ rowNo: a.rowNo, label: a.name, reason: `No free number is left in the ${a.type} range (${lo}–${hi}).` }); continue; }
       used.add(no); out.push({ ...a, no });
     }
@@ -3030,7 +3314,7 @@ main { padding-block: 24px 120px; }
     const toks = normDesc(desc).trim().split(' ').filter(w => w.length > 1 && !/\d/.test(w) && !STOPWORDS.has(w));
     return toks.slice(0, 2).join(' ') || normDesc(desc).trim().split(' ').slice(0, 2).join(' ');
   }
-  function acctOptions(sel, { exclude = null, none = 'Uncategorized', noneValue = '', extra = '' } = {}) {
+  function acctOptions(sel, { exclude = null, none = 'Uncategorized', noneValue = '', extra = '', tail = '' } = {}) {   // tail: P14-3 (D85) "+ New account…" after the groups
     let h = extra;
     if (none != null) h += `<option value="${noneValue}"${sel == null || sel === '' ? ' selected' : ''}>${none}</option>`;
     else if (sel == null) h += '<option value="" selected disabled>Choose an account</option>';
@@ -3042,7 +3326,7 @@ main { padding-block: 24px 120px; }
       }
       if (g) h += `<optgroup label="${type}">${g}</optgroup>`;
     }
-    return h;
+    return h + tail;
   }
   const opt = (v, label, sel) => `<option value="${v}"${String(v) === String(sel) ? ' selected' : ''}>${esc(label)}</option>`;
 
@@ -3065,14 +3349,14 @@ main { padding-block: 24px 120px; }
     return `<div class="summary">
       <dl class="stats" aria-label="Categorization summary">
         <div><dt>Transactions</dt><dd class="num">${st.count.toLocaleString()}</dd></div>
-        <div><dt>Categorized</dt><dd class="num">${pct}%</dd></div>
+        <div><dt>Assigned</dt><dd class="num">${pct}%</dd></div>
         <div><dt>Uncategorized</dt><dd class="num ${st.unc ? 'warn-t' : 'ok-t'}">${st.unc ? `<button class="linkish" type="button" data-rfilter="unc">${st.unc.toLocaleString()}</button>` : 0} <small>· ${st.uncIn} in · ${st.uncOut} out</small></dd></div>
         <div><dt>Transfer pairs</dt><dd class="num">${st.pairs ? `<button class="linkish" type="button" data-rfilter="pairs">${st.pairs}</button>` : 0}</dd></div>
         <div><dt>Possible transfers</dt><dd class="num ${st.poss ? 'warn-t' : ''}">${st.poss ? `<button class="linkish" type="button" data-rfilter="poss">${st.poss}</button>` : 0}</dd></div>
         <div><dt>1950 Transfer Clearing</dt><dd class="num ${st.clearing ? 'warn-t' : 'ok-t'}" id="clearing-bal">${fmtCents(st.clearing)}</dd></div>
       </dl>
       ${warns.join('')}
-      ${st.unc ? `<p class="bal-note">Uncategorized rows go to 4999 Uncategorized Income (money in) or 6999 Uncategorized Expense (money out) in the workbook.</p>` : ''}
+      ${st.unc ? `<p class="bal-note">Uncategorized rows go to 4999 Uncategorized Income (money in) or 6999 Uncategorized Expense (money out) in the workbook. They count in net income, so net income and Schedule C aren't final until you assign them.</p>` : ''}
       <div class="grid-wrap" tabindex="0" role="region" aria-label="Accounts from your statements (scrolls sideways)"><table class="grid" aria-label="Accounts from your statements"><thead><tr><th class="nw">Account</th><th>Name</th><th class="money">Transactions</th><th>Reconciliation</th></tr></thead><tbody>${rows}</tbody></table></div>
     </div>`;
   }
@@ -3084,7 +3368,8 @@ main { padding-block: 24px 120px; }
       if (R.filter === 'unc' && t.offsetAccountNo != null) return false;
       if (R.filter === 'poss' && !t.possibleTransfer) return false;
       if (R.filter === 'pairs' && !t.transferPairId) return false;
-      if (R.filter === 'rule' && !(t.ruleId && !t.manual && !t.transferPairId && !t.possibleTransfer)) return false;
+      if (R.filter === 'rule' && !(t.ruleId && !t.manual && !t.fromFile && !t.transferPairId && !t.possibleTransfer)) return false;
+      if (R.filter === 'file' && !(t.fromFile && !t.manual)) return false;   // P14-5 (D87)
       if (R.filter === 'manual' && !t.manual) return false;
       if (R.source && t.sourceId !== R.source) return false;
       if (R.account && String(t.offsetAccountNo) !== R.account) return false;
@@ -3095,12 +3380,13 @@ main { padding-block: 24px 120px; }
 
   function statusHtml3(t) {
     if (t.manual) return `<span class="tagx acc">Your choice</span><button class="linkish" type="button" data-reset="${t.id}">Reset</button>`;
+    if (t.fromFile) return `<span class="tagx">From file</span><span title="From file: ${esc(t.fileCat)}">${esc(clip(t.fileCat, 28))}</span>`;   // P14-5 (D87)
     if (t.transferPairId) {
       const o = state.txnById.get(t.pairWith), os = o && srcOf(o);
       return `<span class="tagx ok">Transfer</span><span>↔ ${esc(os ? os.name : '?')} · <span class="num">${o ? o.date : ''}</span></span><button class="linkish" type="button" data-unlink="${t.id}">Unlink</button>`;
     }
     const unl = t.noMatch ? `<span>Unlinked</span><button class="linkish" type="button" data-reset="${t.id}">Reset</button>` : '';
-    if (t.possibleTransfer) return `<span class="tagx warn" title="Matched the transfer words, but no matching amount was found in the other files within 3 days.">Possible transfer</span>${unl}`;
+    if (t.possibleTransfer) return `<span class="tagx warn" title="${t.fileTransfer ? 'Your file calls this a transfer' : 'Matched the transfer words'}, but no matching amount was found in the other files within 3 days.">Possible transfer</span>${unl}`;
     if (t.ruleId) { const r = state.applied.find(x => x.id === t.ruleId); return `<span class="tagx">Rule</span><span title="${esc(r ? r.pattern : '')}">${esc(clip(r ? r.pattern : '', 28))}</span>${unl}`; }
     return `<span class="tagx warn">Uncategorized</span><span class="num">→ ${t.amountCents > 0 ? UNC_IN : UNC_OUT}</span>${unl}`;
   }
@@ -3132,6 +3418,28 @@ main { padding-block: 24px 120px; }
     return `Matches <b class="num">${n.toLocaleString()}</b> row${n === 1 ? '' : 's'}${man ? ` (${man} you assigned by hand keep your choice)` : ''}. Rules with a lower priority number run first.`;
   }
 
+  // P14-3 (D85): "+ New account…" panel (state.review.newAcct). Typing updates the state and the fields in place (naInput/naChange).
+  const NA_NEW = '<option value="__new">+ New account…</option>';
+  function naTaxHtml(na) {
+    if (!IS_TYPES.includes(na.type)) return '<span class="lbl">Schedule C line</span><span class="muted">Balance sheet</span>';
+    return `<label for="na-tax">Schedule C line</label><select class="inp" id="na-tax" data-na="taxLine"><option value=""${na.taxLine === '' ? ' selected' : ''}>Not mapped</option>${SCHED_LINES.map(([k, v]) => opt(k, v, na.taxLine)).join('')}</select>`;
+  }
+  function acctDraftHtml() {
+    const na = state.review.newAcct; if (!na) return '';
+    const n = na.ids.length;
+    return `<div class="draft" id="acct-draft" role="group" aria-labelledby="na-h">
+      <h4 id="na-h">${n === 1 ? 'New account for 1 row' : `New account for ${n.toLocaleString()} selected rows`}</h4>
+      <div class="toolbar">
+        <div class="field" style="flex:0 1 110px;min-width:90px"><label for="na-no">Number</label><input class="inp num" id="na-no" data-na="no" inputmode="numeric" value="${esc(na.no)}" autocomplete="off" aria-describedby="na-err"></div>
+        <div class="field grow"><label for="na-name">Name</label><input class="inp" id="na-name" data-na="name" value="${esc(na.name)}" autocomplete="off" aria-describedby="na-err"></div>
+        <div class="field"><label for="na-type">Type</label><select class="inp" id="na-type" data-na="type">${ACCT_TYPES.map(t => opt(t, t, na.type)).join('')}</select></div>
+        <div class="field grow" id="na-tax-wrap">${naTaxHtml(na)}</div>
+      </div>
+      <p class="msg err" id="na-err" role="alert">${esc(na.err)}</p>
+      <div class="toolbar"><button class="btn btn-primary btn-sm" type="button" data-na-save>Add account and assign</button><button class="btn btn-sm" type="button" data-na-cancel>Cancel</button></div>
+    </div>`;
+  }
+
   function txnsHtml() {
     const R = state.review, list = filteredTxns(), N = list.length;
     const pages = Math.max(1, Math.ceil(N / R.pageSize));
@@ -3153,17 +3461,17 @@ main { padding-block: 24px 120px; }
     }).join('');
     const srcOpts = opt('', 'All files', R.source) + state.sources.filter(s => s.status === 'ready' && s.mapped).map(s => opt(s.id, s.name, R.source)).join('');
     const accOpts = opt('', 'All accounts', R.account) + state.coa.filter(a => a.no !== UNC_IN && a.no !== UNC_OUT).map(a => opt(a.no, `${a.no} · ${a.name}`, R.account)).join('');
-    const filt = [['all', 'All'], ['unc', 'Uncategorized'], ['poss', 'Possible transfers'], ['pairs', 'Transfer pairs'], ['rule', 'Set by a rule'], ['manual', 'Set by you']].map(([k, v]) => opt(k, v, R.filter)).join('');
+    const filt = [['all', 'All'], ['unc', 'Uncategorized'], ['poss', 'Possible transfers'], ['pairs', 'Transfer pairs'], ['rule', 'Set by a rule'], ...(R.filter === 'file' || state.txns.some(t => t.fromFile) ? [['file', 'From your file']] : []), ['manual', 'Set by you']].map(([k, v]) => opt(k, v, R.filter)).join('');
     const n = R.sel.size;
     const bulk = n ? `<div class="bulkbar" role="region" aria-label="Bulk assign">
         <b class="num">${n.toLocaleString()} selected</b>
         <label class="sr-only" for="bulk-acct">Assign selected rows to</label>
-        <select class="inp" id="bulk-acct">${acctOptions(null, { none: 'Uncategorized', noneValue: '0', extra: '<option value="" selected disabled>Assign to…</option><option value="auto">Automatic (undo my choices)</option>' }).replace('<option value="0" selected>', '<option value="0">')}</select>
+        <select class="inp" id="bulk-acct">${acctOptions(null, { none: 'Uncategorized', noneValue: '0', extra: '<option value="" selected disabled>Assign to…</option><option value="auto">Automatic (undo my choices)</option>', tail: NA_NEW }).replace('<option value="0" selected>', '<option value="0">')}</select>
         <button class="btn btn-primary btn-sm" type="button" id="bulk-apply">Apply</button>
         <button class="linkish" type="button" id="bulk-clear">Clear selection</button>
         ${n < N ? `<button class="linkish" type="button" id="sel-all">Select all ${N.toLocaleString()} shown</button>` : ''}
       </div>` : '';
-    return `${msgHtml('txns')}${draftHtml()}
+    return `${msgHtml('txns')}${draftHtml()}${acctDraftHtml()}
       <div class="toolbar">
         <div class="field"><label for="rv-filter">Show</label><select class="inp" id="rv-filter" data-rv="filter">${filt}</select></div>
         <div class="field"><label for="rv-source">File</label><select class="inp" id="rv-source" data-rv="source">${srcOpts}</select></div>
@@ -3229,7 +3537,7 @@ main { padding-block: 24px 120px; }
       <div class="toolbar">${setupBar(true)}</div>
       ${coaImportHtml()}
       <p class="bal-note">System accounts can be renamed, but not renumbered, retyped or deleted. Accounts for your files follow the file name until you rename them. The type decides where an account lands: Income Statement (Revenue, COGS, Expense) or Balance Sheet. The Schedule C line decides where an income or expense account lands on the Schedule C worksheet in the Excel file; any account that isn't mapped shows up as a difference there.</p>
-      <div class="grid-wrap"><table class="grid" aria-label="Chart of accounts"><thead><tr><th>No</th><th>Name</th><th>Type</th><th>Schedule C line</th><th class="money">Rows</th><th><span class="sr-only">Delete</span></th></tr></thead>
+      <div class="grid-wrap"><table class="grid" aria-label="Chart of accounts"><thead><tr><th>No</th><th>Name</th><th>Type</th><th>Schedule C line</th><th class="money">Rows assigned</th><th><span class="sr-only">Delete</span></th></tr></thead>
       <tbody>${rows}
         <tr><td><input class="inp num" id="coa-new-no" inputmode="numeric" placeholder="e.g. 6120" style="width:90px" aria-label="New account number"></td>
           <td><input class="inp" id="coa-new-name" placeholder="New account name" aria-label="New account name"></td>
@@ -3266,6 +3574,386 @@ main { padding-block: 24px 120px; }
   }
   function rerender() { categorize(); renderReview(); }
 
+  // ---------- Categorize step (P14-2, D84) ----------
+  // Shell: an empty state only. Later tickets fill #cz-files (categories read from the files) and #cz-sugg (suggestions).
+  // Guarded like renderReview; it never touches state.review.msg (syncSourceAccounts' reset notice is shown on Review).
+  let czBusy = false, czAgain = false;
+  function renderCategorize() {
+    if (state.step !== 'categorize') return;
+    if (czBusy) { czAgain = true; return; }
+    czBusy = true;
+    try { renderCategorizeNow(); } finally { czBusy = false; }
+    if (czAgain) { czAgain = false; renderCategorize(); }
+  }
+  // P14-4 (D86): suggestions. Pure and deterministic: group the uncategorized rows by merchant key + direction and look for
+  // rows the user (not a seed rule) already put on an account with the same key + direction.
+  //   candidate: no account yet, amount != 0, not a possible transfer, not decided by the user (a manual 0 = "keep uncategorized")
+  //   evidence:  has an account, not a transfer pair, not 1950, and set by the user: t.manual, a rule that is not a seed, or t.fromFile
+  // Seed-rule rows are guesses, never evidence. A group is shown when >= 80% of its evidence is on one account; it is ticked by
+  // default only when all of it agrees and there are at least 2 evidence rows. A row is never suggested its own file's account.
+  const mkOf = t => { const d = descOf(t); if (t.mkSrc !== d || t.mkNorm !== t.norm) { t.mk = suggestPattern(d).trim(); t.mkSrc = d; t.mkNorm = t.norm; } return t.mk; };   // cached per txn object
+  function suggestions() {
+    const applied = new Map(state.applied.map(r => [r.id, r])), G = new Map(), pend = new Set(catSrcs().filter(catPending).map(s => s.id));
+    for (const t of state.txns) {
+      if (!t.amountCents || pend.has(t.sourceId)) continue;   // P14-5: rows of a file whose categories are still to be decided are left to that card
+      const mk = mkOf(t); if (!mk) continue;
+      const dir = t.amountCents > 0 ? 'in' : 'out', key = mk + '|' + dir;
+      let g = G.get(key); if (!g) G.set(key, g = { key, mk, dir, cand: [], ev: new Map(), nEv: 0 });
+      if (t.offsetAccountNo == null) {
+        if (!t.possibleTransfer && !t.manual) g.cand.push(t);
+      } else if (!t.transferPairId && t.offsetAccountNo !== TRANSFER_NO) {
+        const r = t.ruleId ? applied.get(t.ruleId) : null;
+        if (t.manual || t.fromFile || (r && !r.seed)) { g.ev.set(t.offsetAccountNo, (g.ev.get(t.offsetAccountNo) || 0) + 1); g.nEv++; }
+      }
+    }
+    const out = [];
+    for (const g of G.values()) {
+      if (!g.nEv || !g.cand.length) continue;
+      let accountNo = null, nAgree = 0;
+      for (const [no, n] of g.ev) if (n > nAgree) { accountNo = no; nAgree = n; }
+      if (nAgree * 5 < g.nEv * 4 || !acctByNo.has(accountNo)) continue;
+      const rows = g.cand.filter(t => (srcOf(t) || {}).coaAccountNo !== accountNo);
+      if (!rows.length) continue;
+      out.push({ key: g.key, mk: g.mk, dir: g.dir, accountNo, ids: rows.map(t => t.id), nEvidence: g.nEv, nAgree, examples: rows.slice(0, 5), checked: nAgree === g.nEv && g.nEv >= 2 });
+    }
+    return out.sort((a, b) => b.ids.length - a.ids.length || (a.mk < b.mk ? -1 : a.mk > b.mk ? 1 : a.dir < b.dir ? -1 : a.dir > b.dir ? 1 : 0));
+  }
+
+  let czGroups = [];                       // the groups on screen
+  const czIdx = new Map();                 // group key → small number for element ids
+  const czN = key => { let n = czIdx.get(key); if (n == null) czIdx.set(key, n = czIdx.size + 1); return n; };
+  const czPicked = g => state.cz.pick.has(g.key) ? state.cz.pick.get(g.key) : g.checked;
+  const czAcct = g => { const no = state.cz.acct.get(g.key); return no != null && acctByNo.has(no) ? no : g.accountNo; };
+  const czDir = dir => dir === 'in' ? 'money in' : 'money out';
+  function czItemHtml(g, lazy) {
+    const n = czN(g.key), no = czAcct(g), pat = esc(g.mk), nr = g.ids.length;
+    const ev = `${g.nAgree} of ${g.nEvidence} similar row${g.nEvidence === 1 ? '' : 's'} you assigned ${g.nEvidence === 1 ? 'is' : 'are'} in ${esc(acctName(g.accountNo))}`;
+    const sel = lazy ? `<option value="${no}" selected>${esc(acctName(no))}</option>` : acctOptions(no, { none: null });
+    const names = new Map(state.sources.map(s => [s.id, s.name]));
+    const ex = g.examples.map(t => `<li><span class="num">${t.date}</span><span class="d">${esc(clip(descOf(t), 70))}</span><span class="num">${fmtCents(t.amountCents)}</span><span class="muted">${esc(names.get(t.sourceId) || '')}</span></li>`).join('');
+    return `<li class="cz-item" data-g="${esc(g.key)}">
+      <label class="tap cz-pick"><input type="checkbox" id="cz-pick-${n}" data-cz="pick" data-g="${esc(g.key)}" ${czPicked(g) ? 'checked' : ''} aria-describedby="cz-ev-${n}"><span>${pat} · ${czDir(g.dir)} · ${plural(nr, 'row')}</span></label>
+      <p class="cz-ev" id="cz-ev-${n}">${ev}</p>
+      <div class="cz-ctl">
+        <div class="field"><label for="cz-acct-${n}">Account<span class="sr-only"> for ${pat}, ${czDir(g.dir)}</span></label><select class="inp" id="cz-acct-${n}" data-cz="acct" data-g="${esc(g.key)}"${lazy ? ' data-lazy="1"' : ''}>${sel}</select></div>
+        <label class="tap cz-rule"><input type="checkbox" id="cz-rule-${n}" data-cz="rule" data-g="${esc(g.key)}" ${state.cz.rule.has(g.key) ? 'checked' : ''}><span>Also add a rule (contains "${pat}", ${czDir(g.dir)})</span></label>
+      </div>
+      <details class="cz-ex"><summary>Show ${nr > g.examples.length ? `${g.examples.length} of ${nr.toLocaleString()} rows` : plural(nr, 'row')}</summary><ul>${ex}</ul></details>
+    </li>`;
+  }
+  const czCount = () => czGroups.reduce((n, g) => n + (czPicked(g) ? 1 : 0), 0);
+  function czSync() { const n = czCount(), b = $('cz-apply'); if (b) { b.textContent = `Apply selected (${n})`; b.disabled = n === 0; } }
+  function renderCategorizeNow() {
+    const Z = state.cz, ae = document.activeElement, keep = ae && ae.id;
+    renderFilesCard();   // P14-5 (D87)
+    czGroups = suggestions();
+    const live = new Set(czGroups.map(g => g.key));
+    for (const m of [Z.pick, Z.acct]) for (const k of [...m.keys()]) if (!live.has(k)) m.delete(k);   // prune stale keys
+    for (const k of [...Z.rule]) if (!live.has(k)) Z.rule.delete(k);
+    const msg = Z.msg ? `<p class="msg ${Z.msg.kind}" role="${Z.msg.kind === 'err' ? 'alert' : 'status'}">${esc(Z.msg.text)}</p>` : '';
+    const head = '<h3 id="cz-sugg-h" tabindex="-1">Suggested from rows you assigned</h3><p class="cz-sub">Uncategorized rows that look like rows you already put on an account, grouped by merchant and direction. Tick the ones you want, check the account, then apply.</p>';
+    const empty = `<div class="empty">
+      <strong>Nothing to suggest yet</strong>
+      <span>Suggestions appear here when rows you assigned (by hand or with your own rules) look like rows that are still uncategorized. Continue to Review to categorize transactions.</span>
+    </div>`;
+    if (!czGroups.length) { $('cz-sugg').innerHTML = Z.msg ? `<div class="cz-wrap">${head}${msg}</div>${empty}` : empty; }
+    else {
+      const lazy = czGroups.length > 50;   // up to 50 groups every select is filled now; beyond that it fills on focus, like the Review grid
+      $('cz-sugg').innerHTML = `<div class="cz-wrap">${head}
+        <div class="toolbar"><button class="btn btn-primary btn-sm" type="button" id="cz-apply"></button><button class="btn btn-sm" type="button" id="cz-all">Select all</button><button class="btn btn-sm" type="button" id="cz-none">Select none</button></div>
+        ${msg}<ul class="cz-list">${czGroups.map(g => czItemHtml(g, lazy)).join('')}</ul></div>`;
+      czSync();
+    }
+    const el = keep && document.getElementById(keep);
+    if (el) el.focus({ preventScroll: true });
+  }
+
+  // Apply the ticked groups. Account choice, "also add a rule" per group; one Undo through undoSetup (same snapshot shape as naSave).
+  function czApply() {
+    const Z = state.cz, picked = czGroups.filter(czPicked); if (!picked.length) return;
+    const before = snapAll();
+    let nRules = 0;
+    for (const g of picked) if (Z.rule.has(g.key)) {
+      // P14-4 (D86): priority 5 sits between the user's own "+ Rule" rules (1) and the seeds (10 and up)
+      const r = { id: 'r' + (ruleSeq + 1), match: 'contains', pattern: g.mk, accountNo: czAcct(g), direction: g.dir, priority: 5, hits: 0 };
+      if (state.applied.some(x => ruleKey(x) === ruleKey(r))) continue;   // an exact copy is already there
+      ruleSeq++; state.rules.push(r); state.applied.push({ ...r }); nRules++;
+    }
+    if (nRules) categorize();
+    const byAcct = new Map();   // rows the rules did not put on the account are assigned by hand, one assignTxns per account
+    for (const g of picked) {
+      const no = czAcct(g), list = byAcct.get(no) || [];
+      for (const id of g.ids) { const t = state.txnById.get(id); if (t && t.offsetAccountNo !== no) list.push(id); }
+      byAcct.set(no, list);
+    }
+    for (const [no, ids] of byAcct) if (ids.length) assignTxns(ids, no);
+    categorize();
+    let rows = 0;
+    for (const g of picked) { const no = czAcct(g); for (const id of g.ids) { const t = state.txnById.get(id); if (t && t.offsetAccountNo === no) rows++; } }
+    const text = `Applied ${plural(picked.length, 'suggestion')} to ${plural(rows, 'row')}.` + (nRules ? ` Added ${plural(nRules, 'rule')}.` : '');
+    Z.msg = { kind: 'ok', text };
+    renderCategorize();
+    const h = $('cz-sugg-h'); if (h) h.focus();
+    showToast(`Applied ${plural(picked.length, 'suggestion')}`, () => { undoSetup(before); Z.msg = null; categorize(); renderCategorize(); });
+  }
+  const czBox = $('cz-sugg');
+  czBox.addEventListener('change', e => {
+    const el = e.target, key = el.dataset && el.dataset.g; if (!key) return;
+    if (el.dataset.cz === 'pick') { state.cz.pick.set(key, el.checked); czSync(); }
+    else if (el.dataset.cz === 'rule') { if (el.checked) state.cz.rule.add(key); else state.cz.rule.delete(key); }
+    else if (el.dataset.cz === 'acct') state.cz.acct.set(key, Number(el.value));
+  });
+  czBox.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('button'); if (!b) return;
+    if (b.id === 'cz-apply') czApply();
+    else if (b.id === 'cz-all' || b.id === 'cz-none') { for (const g of czGroups) state.cz.pick.set(g.key, b.id === 'cz-all'); renderCategorize(); }
+  });
+  const czFill = e => {
+    const el = e.target; if (!el.matches || !el.matches('select[data-lazy]')) return;
+    const g = czGroups.find(x => x.key === el.dataset.g); if (!g) return;
+    el.removeAttribute('data-lazy'); el.innerHTML = acctOptions(czAcct(g), { none: null });
+  };
+  czBox.addEventListener('focusin', czFill);
+  czBox.addEventListener('mousedown', czFill);
+  czBox.addEventListener('touchstart', czFill, { passive: true });
+
+  // ---------- Categories from your files card (P14-5, D87) ----------
+  // One list item per distinct category of a file whose categories are still to be decided, a "Goes to" choice (existing account |
+  // new account | transfer | leave uncategorized) and a form for a new account, then the proposed rules. Edits live in state.cz.file
+  // (key → {goes, no, form}) and state.cz.fileRule (rule id → ticked); the plan itself is pure and recomputed on every render.
+  const czfForm = f => ({ no: f.no == null ? '' : String(f.no), name: f.name, type: f.type, taxLine: f.taxLine, noTouched: !!f.fromNumber, taxTouched: false });
+  function czfChoice(it) {
+    let ch = state.cz.file.get(it.key);
+    if (!ch) {
+      const m = it.match;
+      ch = m.kind === 'acct' ? { goes: 'acct', no: m.no } : m.kind === 'new' ? { goes: 'new', form: czfForm(m) } : { goes: m.kind };
+      state.cz.file.set(it.key, ch);
+    }
+    return ch;
+  }
+  // Numbers a new account must avoid: the chart plus the other new accounts in this list.
+  const czfUsed = except => { const u = new Set(state.coa.map(a => a.no)); for (const [k, ch] of state.cz.file) if (k !== except && ch.goes === 'new' && ch.form && /^\d+$/.test(ch.form.no)) u.add(+ch.form.no); return u; };
+  const czfDest = (it, ch) => ch.goes === 'acct' && acctByNo.has(ch.no) && ch.no !== TRANSFER_NO ? acctName(ch.no) : ch.goes === 'new' && ch.form ? `${ch.form.no || '(no number)'} · ${ch.form.name}` : null;
+  function czfTaxHtml(n, key, f) {
+    if (!IS_TYPES.includes(f.type)) return '<span class="lbl">Schedule C line</span><span class="muted">Balance sheet</span>';
+    return `<label for="czf-tax-${n}">Schedule C line</label><select class="inp" id="czf-tax-${n}" data-czf="taxLine" data-k="${esc(key)}"><option value=""${f.taxLine === '' ? ' selected' : ''}>Not mapped</option>${SCHED_LINES.map(([k, v]) => opt(k, v, f.taxLine)).join('')}</select>`;
+  }
+  function czfGoesOptions(it, ch, full) {
+    const sel = g => ch.goes === g ? ' selected' : '';
+    const extra = `<option value="__new"${sel('new')}>New account: ${esc(clip(ch.form ? ch.form.name : it.name, 40))}</option><option value="__transfer"${sel('transfer')}>Transfer between my accounts</option><option value="__ignore"${sel('ignore')}>Leave uncategorized</option>`;
+    if (!full) return extra + (ch.goes === 'acct' ? `<option value="${ch.no}" selected>${esc(acctName(ch.no))}</option>` : '');
+    return acctOptions(ch.goes === 'acct' ? ch.no : -1, { none: null, extra });
+  }
+  function czfItemHtml(it, ch, lazy) {
+    const n = czN('f:' + it.key), k = esc(it.key), f = ch.form;
+    const counts = `${plural(it.n, 'row')} · ${it.rows.in.toLocaleString()} in · ${it.rows.out.toLocaleString()} out`;
+    const form = ch.goes === 'new' && f ? `<div class="cz-ctl" role="group" aria-label="New account for ${esc(it.name)}">
+        <div class="field" style="flex:0 1 110px;min-width:90px"><label for="czf-no-${n}">Number</label><input class="inp num" id="czf-no-${n}" data-czf="no" data-k="${k}" inputmode="numeric" value="${esc(f.no)}" autocomplete="off" aria-describedby="czf-err-${n}"></div>
+        <div class="field grow"><label for="czf-name-${n}">Name</label><input class="inp" id="czf-name-${n}" data-czf="name" data-k="${k}" value="${esc(f.name)}" autocomplete="off" aria-describedby="czf-err-${n}"></div>
+        <div class="field"><label for="czf-type-${n}">Type</label><select class="inp" id="czf-type-${n}" data-czf="type" data-k="${k}">${ACCT_TYPES.map(t => opt(t, t, f.type)).join('')}</select></div>
+        <div class="field grow" id="czf-taxw-${n}">${czfTaxHtml(n, it.key, f)}</div>
+      </div>` : '';
+    return `<li class="cz-item" data-k="${k}">
+      <p class="czf-cat"><b>${esc(it.name)}</b> <span class="cz-sub">${counts}</span></p>
+      <p class="cz-ev" id="czf-how-${n}">${esc(it.match.how)}</p>
+      <div class="cz-ctl"><div class="field"><label for="czf-goes-${n}">Goes to<span class="sr-only"> for ${esc(it.name)}</span></label><select class="inp" id="czf-goes-${n}" data-czf="goes" data-k="${k}"${lazy && ch.goes !== 'new' ? ' data-lazy="1"' : ''}>${czfGoesOptions(it, ch, !lazy)}</select></div></div>
+      ${form}
+      <p class="msg err" id="czf-err-${n}" role="alert">${esc(ch.err || '')}</p>
+    </li>`;
+  }
+  function czfRulesHtml(plan) {
+    const byKey = new Map(plan.items.map(it => [it.key, it]));
+    const li = plan.rules.map(r => {
+      const it = byKey.get(r.catKey), dest = it && czfDest(it, czfChoice(it)); if (!dest) return '';
+      const n = czN('r:' + r.id), on = state.cz.fileRule.has(r.id) ? state.cz.fileRule.get(r.id) : true;
+      return `<li><label class="tap cz-rule"><input type="checkbox" id="czf-rule-${n}" data-czf-rule="${esc(r.id)}" ${on ? 'checked' : ''}><span>Rows containing "${esc(r.mk)}" (${czDir(r.dir)}) go to ${esc(dest)}. ${plural(r.n, 'row')} here${r.other ? `, and it also matches ${plural(r.other, 'row')} in your other files` : ''}.</span></label></li>`;
+    }).join('');
+    return li ? `<fieldset class="czf-rules"><legend>Rules for your other files and next time</legend><ul class="cz-list">${li}</ul></fieldset>` : '';
+  }
+  function renderFilesCard() {
+    const box = $('cz-files'), Z = state.cz, all = catSrcs();
+    if (!all.length) { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
+    const plan = catPlan(), live = new Set(plan.items.map(it => it.key)), liveR = new Set(plan.rules.map(r => r.id));
+    for (const k of [...Z.file.keys()]) if (!live.has(k)) Z.file.delete(k);
+    for (const k of [...Z.fileRule.keys()]) if (!liveR.has(k)) Z.fileRule.delete(k);
+    const lines = all.filter(s => !catPending(s)).map(s => s.catOn === catSig(s)
+      ? `<p class="cz-sub">Categories from ${esc(s.name)} are applied. Rows keep the account their category goes to until you change a row on the Review step.</p>`
+      : `<p class="cz-sub">Categories from ${esc(s.name)} were skipped. <button class="linkish" type="button" data-czf-use="${esc(s.id)}">Use them</button></p>`).join('');
+    let body = '';
+    if (plan.items.length) {
+      const lazy = plan.items.length > 40, files = [...new Set(plan.srcs.map(s => s.name))];
+      body = `<p class="cz-sub">${esc(files.join(', '))} ${files.length === 1 ? 'has' : 'have'} a category on each row. Check where each one goes. New accounts are added to your chart, and nothing changes until you apply.</p>
+        <p class="msg err" id="czf-err" role="alert">${esc(Z.fileErr)}</p>
+        <ul class="cz-list" id="czf-list">${plan.items.map(it => czfItemHtml(it, czfChoice(it), lazy)).join('')}</ul>
+        <div id="czf-rules">${czfRulesHtml(plan)}</div>
+        <div class="toolbar"><button class="btn btn-primary btn-sm" type="button" id="czf-apply">Apply</button><button class="btn btn-sm" type="button" id="czf-skip">Skip</button></div>`;
+    }
+    box.innerHTML = `<div class="cz-wrap czf"><h3 id="cz-files-h" tabindex="-1">Categories from your files</h3>${body}${lines}</div>`;
+  }
+  function czfRulesRefresh() { const el = $('czf-rules'); if (el) el.innerHTML = czfRulesHtml(catPlan()); }
+  // The whole batch is checked first; one bad entry changes nothing.
+  function czfValidate(plan) {
+    const errs = new Map(), used = new Set(state.coa.map(a => a.no));
+    for (const it of plan.items) {
+      const ch = czfChoice(it); ch.err = '';
+      if (ch.goes === 'acct' && !acctByNo.has(ch.no)) { errs.set(it.key, 'Choose an account.'); continue; }
+      if (ch.goes !== 'new') continue;
+      const f = ch.form, p = parseAcctNo(f.no);
+      if (p.error) errs.set(it.key, p.error);
+      else if (used.has(p.no)) errs.set(it.key, `${p.no} is used by another new account in this list.`);
+      else if (!String(f.name).trim()) errs.set(it.key, 'Enter a name for the new account.');
+      else if (!ACCT_TYPES.includes(f.type)) errs.set(it.key, 'Choose a type for the new account.');
+      else used.add(p.no);
+    }
+    return errs;
+  }
+  function czfApply() {
+    const Z = state.cz, plan = catPlan(); if (!plan.items.length) return;
+    const errs = czfValidate(plan);
+    if (errs.size) {
+      for (const [k, e] of errs) czfChoice(plan.items.find(it => it.key === k)).err = e;
+      Z.fileErr = `${plural(errs.size, 'category', 'categories')} need${errs.size === 1 ? 's' : ''} fixing below. Nothing was changed.`;
+      renderCategorize();
+      const first = plan.items.find(it => errs.has(it.key)), n = czN('f:' + first.key), ch = czfChoice(first);
+      const f = ch.goes === 'new' ? $((/name/i.test(errs.get(first.key)) ? 'czf-name-' : 'czf-no-') + n) : $('czf-goes-' + n); if (f) f.focus();
+      return;
+    }
+    Z.fileErr = '';
+    const before = snapAll();
+    let nNew = 0;
+    for (const it of plan.items) {
+      const ch = czfChoice(it); let c;
+      if (ch.goes === 'new') { const f = ch.form; coaAdd(f.no, f.name, f.type, IS_TYPES.includes(f.type) ? f.taxLine : ''); c = { kind: 'acct', no: +f.no }; nNew++; }
+      else if (ch.goes === 'acct') c = ch.no === TRANSFER_NO ? { kind: 'transfer' } : { kind: 'acct', no: ch.no };
+      else c = { kind: ch.goes };
+      state.cats.set(it.key, c);
+    }
+    for (const s of plan.srcs) s.catOn = catSig(s);
+    let nRules = 0;
+    for (const r of plan.rules) {
+      if (Z.fileRule.has(r.id) && !Z.fileRule.get(r.id)) continue;
+      const c = state.cats.get(r.catKey); if (!c || c.kind !== 'acct') continue;
+      const rule = { id: 'r' + (ruleSeq + 1), match: 'contains', pattern: r.mk, accountNo: c.no, direction: r.dir, priority: 5, hits: 0, fromFile: true };
+      if (state.applied.some(x => ruleKey(x) === ruleKey(rule)) || state.rules.some(x => ruleKey(x) === ruleKey(rule))) continue;
+      ruleSeq++; state.rules.push(rule); state.applied.push({ ...rule }); nRules++;
+    }
+    Z.file.clear(); Z.fileRule.clear();
+    categorize();
+    const rows = state.txns.filter(t => t.fromFile).length;
+    Z.msg = null;
+    renderCategorize();
+    const h = $('cz-files-h'); if (h) h.focus();
+    showToast(`Applied ${plural(plan.items.length, 'category', 'categories')}: ${plural(nNew, 'new account')}, ${plural(nRules, 'rule')}, ${plural(rows, 'row')} set from your file`, () => { undoSetup(before); Z.file.clear(); Z.fileRule.clear(); Z.fileErr = ''; renderCategorize(); });
+  }
+  function czfSkip() {
+    const plan = catPlan(); if (!plan.srcs.length) return;
+    const before = snapAll();
+    for (const s of plan.srcs) s.catOn = 'skip:' + catSig(s);
+    state.cz.file.clear(); state.cz.fileRule.clear(); state.cz.fileErr = '';
+    categorize(); renderCategorize();
+    const h = $('cz-files-h'); if (h) h.focus();
+    showToast(`Skipped the categories in ${plural(plan.srcs.length, 'file')}`, () => { undoSetup(before); renderCategorize(); });
+  }
+  const czfBox = $('cz-files');
+  czfBox.addEventListener('input', e => {
+    const el = e.target, d = el.dataset && el.dataset.czf; if (d !== 'no' && d !== 'name') return;
+    const ch = state.cz.file.get(el.dataset.k); if (!ch || !ch.form) return;
+    const f = ch.form, n = czN('f:' + el.dataset.k);
+    if (d === 'no') { f.no = el.value; f.noTouched = el.value.trim() !== ''; }
+    else {
+      f.name = el.value;
+      if (!f.taxTouched) { f.taxLine = defaultTaxLine(f.type, f.name); const t = $('czf-tax-' + n); if (t) t.value = f.taxLine; }
+      const o = $('czf-goes-' + n), op = o && o.querySelector('option[value="__new"]'); if (op) op.textContent = 'New account: ' + clip(f.name, 40);
+    }
+    czfRulesRefresh();
+  });
+  czfBox.addEventListener('change', e => {
+    const el = e.target, d = el.dataset && el.dataset.czf;
+    if (el.dataset && el.dataset.czfRule) { state.cz.fileRule.set(el.dataset.czfRule, el.checked); return; }
+    if (!d) return;
+    const key = el.dataset.k, ch = state.cz.file.get(key), it = ch && catPlan().items.find(x => x.key === key); if (!it) return;
+    if (d === 'goes') {
+      const v = el.value; ch.err = '';
+      if (v === '__new') { ch.goes = 'new'; if (!ch.form) ch.form = czfForm(catNewForm(it.name, czfUsed(key), it.rows)); }
+      else if (v === '__transfer') ch.goes = 'transfer';
+      else if (v === '__ignore') ch.goes = 'ignore';
+      else { ch.goes = 'acct'; ch.no = Number(v); }
+      renderCategorize();
+    } else if (ch.form && d === 'type') {
+      const f = ch.form, n = czN('f:' + key);
+      f.type = el.value;
+      if (!f.noTouched) { const no = nextAcctNo(f.type, czfUsed(key)); f.no = no == null ? '' : String(no); $('czf-no-' + n).value = f.no; }
+      f.taxTouched = false; f.taxLine = defaultTaxLine(f.type, f.name);
+      $('czf-taxw-' + n).innerHTML = czfTaxHtml(n, key, f);
+      czfRulesRefresh();
+    } else if (ch.form && d === 'taxLine') { ch.form.taxLine = el.value; ch.form.taxTouched = true; }
+  });
+  czfBox.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('button'); if (!b) return;
+    if (b.id === 'czf-apply') czfApply();
+    else if (b.id === 'czf-skip') czfSkip();
+    else if (b.dataset.czfUse) {
+      const s = srcById(b.dataset.czfUse); if (!s) return;
+      s.catOn = undefined; categorize(); renderCategorize();
+      const h = $('cz-files-h'); if (h) h.focus();
+    }
+  });
+  const czfFill = e => {
+    const el = e.target; if (!el.matches || !el.matches('select[data-lazy]') || !el.dataset.k) return;
+    const it = catPlan().items.find(x => x.key === el.dataset.k); if (!it) return;
+    el.removeAttribute('data-lazy'); el.innerHTML = czfGoesOptions(it, czfChoice(it), true);
+  };
+  czfBox.addEventListener('focusin', czfFill);
+  czfBox.addEventListener('mousedown', czfFill);
+  czfBox.addEventListener('touchstart', czfFill, { passive: true });
+
+  // P14-3 (D85): add an account from the Transactions tab and assign the row(s) to it in one step.
+  function naOpen(ids, origin) {
+    const R = state.review; ids = ids.filter(id => state.txnById.get(id)); if (!ids.length) return;
+    const out = ids.filter(id => state.txnById.get(id).amountCents < 0).length, type = out * 2 >= ids.length ? 'Expense' : 'Revenue';
+    const no = nextAcctNo(type, new Set(state.coa.map(a => a.no)));
+    R.draft = null; R.msg = null;   // one draft at a time
+    R.newAcct = { ids, origin, no: no == null ? '' : String(no), noTouched: false, name: '', type, taxLine: defaultTaxLine(type, ''), taxTouched: false, err: '' };
+    renderReview();   // also puts a picked "+ New account…" row select back to its account
+    const f = $('na-name'); if (f) { f.focus({ preventScroll: true }); window.scrollTo({ top: $('review-body').getBoundingClientRect().top + window.scrollY - 16 }); }
+  }
+  function naCancel() {
+    const na = state.review.newAcct; if (!na) return;
+    state.review.newAcct = null; renderReview(); const o = $(na.origin); if (o) o.focus();
+  }
+  function naInput(el) {   // in place: no re-render while typing
+    const na = state.review.newAcct; if (!na) return;
+    if (el.dataset.na === 'no') { na.no = el.value; na.noTouched = el.value.trim() !== ''; }
+    else if (el.dataset.na === 'name') { na.name = el.value; if (!na.taxTouched) { na.taxLine = defaultTaxLine(na.type, na.name); const t = $('na-tax'); if (t) t.value = na.taxLine; } }
+  }
+  function naChange(el) {
+    const na = state.review.newAcct; if (!na) return;
+    if (el.dataset.na === 'type') {
+      na.type = el.value;
+      if (!na.noTouched) { const no = nextAcctNo(na.type, new Set(state.coa.map(a => a.no))); na.no = no == null ? '' : String(no); $('na-no').value = na.no; }
+      na.taxTouched = false; na.taxLine = defaultTaxLine(na.type, na.name);
+      $('na-tax-wrap').innerHTML = naTaxHtml(na);
+    } else if (el.dataset.na === 'taxLine') { na.taxLine = el.value; na.taxTouched = true; }
+  }
+  function naSave() {
+    const R = state.review, na = R.newAcct; if (!na) return;
+    const before = snapAll();
+    const err = coaAdd(na.no, na.name, na.type, na.taxLine);
+    if (err) {
+      na.err = err; $('na-err').textContent = err;
+      const f = $(/name/i.test(err) ? 'na-name' : 'na-no'); if (f) f.focus();
+      return;
+    }
+    const no = +na.no, name = na.name.trim(), n = na.ids.length;
+    assignTxns(na.ids, no);
+    R.newAcct = null; if (na.origin === 'bulk-acct') R.sel.clear();
+    setMsg('txns', 'ok', `Added ${no} · ${name} and assigned ${n.toLocaleString()} row${n === 1 ? '' : 's'}.`);
+    renderReview(); const o = $(na.origin); if (o) o.focus();
+    showToast(`Added ${no} · ${name}`, () => { undoSetup(before); renderReview(); });
+  }
+  $('review-body').addEventListener('keydown', e => { if (e.key === 'Escape' && e.target.closest && e.target.closest('#acct-draft')) { e.preventDefault(); naCancel(); } });
+
   // Events: tabs, summary shortcuts, grid, bulk bar, rules, chart of accounts.
   $('review-tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; state.review.tab = b.dataset.tab; state.review.msg = null; renderReview(); $('tab-' + b.dataset.tab).focus(); });
   $('review-tabs').addEventListener('keydown', e => {
@@ -3285,13 +3973,14 @@ main { padding-block: 24px 120px; }
     const el = e.target; if (!el.matches || !el.matches('select[data-lazy]')) return;
     const t = state.txnById.get(el.dataset.assign); if (!t) return;
     el.removeAttribute('data-lazy');
-    el.innerHTML = acctOptions(t.offsetAccountNo, { exclude: (srcOf(t) || {}).coaAccountNo });
+    el.innerHTML = acctOptions(t.offsetAccountNo, { exclude: (srcOf(t) || {}).coaAccountNo, tail: NA_NEW });
   };
   body.addEventListener('focusin', fillLazy);
   body.addEventListener('mousedown', fillLazy);
   body.addEventListener('touchstart', fillLazy, { passive: true });
   body.addEventListener('input', e => {
     const el = e.target;
+    if (el.dataset.na) { naInput(el); return; }
     if (el.dataset.rv === 'q') { clearTimeout(qTimer); qTimer = setTimeout(() => { state.review.q = el.value; state.review.page = 0; renderReview(); }, 150); return; }
     if (el.dataset.d) { readDraft(el); const c = $('draft-count'); if (c) c.innerHTML = draftCountText(); }
   });
@@ -3302,6 +3991,8 @@ main { padding-block: 24px 120px; }
   }
   body.addEventListener('change', e => {
     const el = e.target, R = state.review;
+    if (el.dataset.na) { naChange(el); return; }
+    if (el.id === 'bulk-acct' && el.value === '__new') { naOpen([...R.sel], 'bulk-acct'); return; }
     if (el.dataset.rv && el.dataset.rv !== 'q') { R[el.dataset.rv] = el.value; R.page = 0; renderReview(); return; }
     if (el.dataset.d) { readDraft(el); const c = $('draft-count'); if (c) c.innerHTML = draftCountText(); return; }
     if (el.hasAttribute('data-imp-mode')) { state.review.importMode = el.value === 'merge' ? 'merge' : 'replace'; renderReview(); return; }
@@ -3311,7 +4002,7 @@ main { padding-block: 24px 120px; }
       renderReview(); return;
     }
     if (el.dataset.ciPick && R.coaImport) { R.coaImport.picks.set(Number(el.dataset.ciPick), el.value); renderReview(); return; }
-    if (el.dataset.assign) { assignTxns([el.dataset.assign], el.value === '' ? 0 : Number(el.value)); renderReview(); return; }
+    if (el.dataset.assign) { if (el.value === '__new') { naOpen([el.dataset.assign], el.id); return; } assignTxns([el.dataset.assign], el.value === '' ? 0 : Number(el.value)); renderReview(); return; }
     if (el.dataset.sel) { if (el.checked) R.sel.add(el.dataset.sel); else R.sel.delete(el.dataset.sel); renderReview(); return; }
     if (el.id === 'sel-page' || el.id === 'sel-page-m') {   // header box on wide screens, a labelled box above the cards on phones (P6-5)
       const list = filteredTxns(), rows = list.slice(R.page * R.pageSize, (R.page + 1) * R.pageSize);
@@ -3345,6 +4036,7 @@ main { padding-block: 24px 120px; }
     if (b.id === 'sel-all') { for (const t of filteredTxns()) R.sel.add(t.id); renderReview(); return; }
     if (b.id === 'bulk-apply') {
       const v = $('bulk-acct').value; if (v === '') return;
+      if (v === '__new') { naOpen([...R.sel], 'bulk-acct'); return; }
       const n = R.sel.size;
       assignTxns([...R.sel], v === 'auto' ? 'auto' : Number(v));
       R.sel.clear();
@@ -3354,11 +4046,14 @@ main { padding-block: 24px 120px; }
     if (b.dataset.mkrule) {
       const t = state.txnById.get(b.dataset.mkrule); if (!t) return;
       const own = (srcOf(t) || {}).coaAccountNo;
+      R.newAcct = null;   // P14-3: one draft at a time
       R.draft = { match: 'contains', pattern: suggestPattern(descOf(t)), direction: t.amountCents > 0 ? 'in' : 'out', accountNo: t.offsetAccountNo != null && t.offsetAccountNo !== own ? t.offsetAccountNo : null, priority: 1 };
       R.msg = null; renderReview(); const p = $('d-pattern'); if (p) { p.focus(); p.select(); } window.scrollTo({ top: $('review-body').getBoundingClientRect().top + window.scrollY - 16 });
       return;
     }
     if (b.hasAttribute('data-draft-cancel')) { R.draft = null; renderReview(); return; }
+    if (b.hasAttribute('data-na-save')) { naSave(); return; }
+    if (b.hasAttribute('data-na-cancel')) { naCancel(); return; }
     if (b.hasAttribute('data-draft-save')) {
       const d = R.draft, probe = { ...d };
       if (!compileRule(probe)) { const c = $('draft-count'); if (c) c.innerHTML = `<span class="err">${esc(probe.error)}</span>`; return; }
@@ -3520,9 +4215,9 @@ main { padding-block: 24px 120px; }
     const st = X.status;
     $('export-summary').innerHTML = `<div class="summary">
       <dl class="stats even" aria-label="Books check">
-        <div><dt>Trial balance</dt><dd>${balancedHtml(B.tbCheck)} <small class="num">· Dr = Cr = ${fmtCents(J.dr)}</small></dd></div>
-        <div><dt>Balance sheet</dt><dd>${balancedHtml(B.bsCheck)}</dd></div>
-        <div><dt>Net income</dt><dd class="num">${fmtCents(B.ni)}</dd></div>
+        <div><dt>Debits = credits</dt><dd>${balancedHtml(B.tbCheck)} <small class="num">· Dr = Cr = ${fmtCents(J.dr)}</small></dd></div>
+        <div><dt>Assets = liabilities + equity</dt><dd>${balancedHtml(B.bsCheck)}</dd></div>
+        <div><dt>Net income</dt><dd class="num">${fmtCents(B.ni)}${B.unc ? ` <small>· includes ${B.unc.toLocaleString('en-US')} uncategorized</small>` : ''}</dd></div>
         <div><dt>Total assets</dt><dd class="num">${fmtCents(B.assets)}</dd></div>
         <div><dt>Liabilities + equity</dt><dd class="num">${fmtCents(B.liabilities + B.equity + B.ni)}</dd></div>
         <div><dt>Journal entries</dt><dd class="num">${n.toLocaleString()}</dd></div>
@@ -3682,7 +4377,7 @@ main { padding-block: 24px 120px; }
     const srcName = new Map(J.srcs.map(s => [s.id, s.name]));
 
     // General Ledger: one row per journal line, by account then date. Running balance resets on each account.
-    styleHeader(glS.addRow(['Account No', 'Account Name', 'Date', 'JE #', 'Source', 'Description', 'Debit', 'Credit', 'Running Balance']));
+    styleHeader(glS.addRow(['Account No', 'Account Name', 'Date', 'JE #', 'Source', 'Description', 'Debit', 'Credit', 'Running Balance (Dr − Cr)']));
     const lines = [];
     for (const e of J.entries) for (const [no, d, c] of e.lines) lines.push({ no, d, c, e });
     lines.sort((x, y) => x.no - y.no || (x.e.date < y.e.date ? -1 : x.e.date > y.e.date ? 1 : 0) || x.e.jeNo - y.e.jeNo);
@@ -3982,7 +4677,7 @@ main { padding-block: 24px 120px; }
     for (const s of J.srcs) for (const t of state.txns) {
       if (t.sourceId !== s.id) continue;
       const acct = !t.amountCents ? null : t.offsetAccountNo ?? (t.amountCents > 0 ? UNC_IN : UNC_OUT);
-      const how = !t.amountCents ? 'Zero amount (not posted)' : t.manual ? 'Your choice' : t.transferPairId ? 'Matched transfer'
+      const how = !t.amountCents ? 'Zero amount (not posted)' : t.manual ? 'Your choice' : t.fromFile ? `From file: ${t.fileCat}` : t.transferPairId ? 'Matched transfer'
         : t.possibleTransfer ? 'Possible transfer (uncategorized)' : t.ruleId ? `Rule: ${(ruleById.get(t.ruleId) || {}).pattern || ''}` : 'Uncategorized';
       if (how.startsWith('Possible transfer')) nPossible++;
       if (acct === UNC_IN && t.amountCents > 0 && cardNos.includes(s.coaAccountNo)) nCardIn++;
@@ -3996,7 +4691,7 @@ main { padding-block: 24px 120px; }
     // Chart of accounts: the lookup table for names and types.
     // Columns F–G (P9-1): the Schedule C line tag the Schedule C sheet sums by (edit it here and that sheet follows).
     const schedName = new Map(SCHED_LINES);
-    styleHeader(coaS.addRow(['No', 'Name', 'Type', 'Statement', 'Normal Balance', 'Schedule C Line', 'Schedule C Description']));
+    styleHeader(coaS.addRow(['No', 'Name', 'Type', 'Report', 'Normal Balance', 'Schedule C Line', 'Schedule C Description']));
     for (const a of state.coa) { const t = taxLineOf(a); coaS.addRow([a.no, a.name, a.type, ['Asset', 'Liability', 'Equity'].includes(a.type) ? 'BS' : 'IS', normalOf(a), t || null, schedName.get(t) || null]); }
 
     // Overview (P10-5, D73): the first tab. Headline numbers and every check, each a live formula on the sheet that owns it
@@ -4023,7 +4718,10 @@ main { padding-block: 24px 120px; }
       line('Cost of goods sold', ref(SHEET.is, `${T}${cogs.row}`), cogs.cents, SHEET.is);
       line('Gross profit', ref(SHEET.is, `${T}${gp}`), rev.cents - cogs.cents, SHEET.is, { border: TOP });
       line('Total expenses', ref(SHEET.is, `${T}${exp.row}`), exp.cents, SHEET.is);
-      line('Net income', ref(SHEET.is, `${T}${ni}`), B.ni, SHEET.is, { bold: true, border: TOTAL });
+      { const k = line('Net income', ref(SHEET.is, `${T}${ni}`), B.ni, SHEET.is, { bold: true, border: TOTAL });   // P14-1 (D83): not final while uncategorized
+        const u = `COUNTIF(${GL_A},${UNC_IN})+COUNTIF(${GL_A},${UNC_OUT})`;
+        ovS.getCell(`E${k}`).value = F(`IF(${u}>0,"Includes "&TEXT(${u},"#,##0")&" uncategorized transactions","")`, B.unc ? `Includes ${B.unc.toLocaleString('en-US')} uncategorized transactions` : '');
+        ovS.getCell(`E${k}`).font = { color: { argb: 'FF9C0006' } }; }
       for (const x of scOuts) {   // P13-3: one line 31 per tax year; P13-2: "Not final" beside it while uncategorized
         const k = line(scMulti ? `Schedule C ${x.Y} net profit (line 31)` : 'Schedule C net profit (line 31)', ref(x.name, `C${x.r31}`), x.v31, x.name);
         ovS.getCell(`E${k}`).value = F(x.note.f, x.note.v); ovS.getCell(`E${k}`).font = { color: { argb: 'FF9C0006' } };
@@ -4048,7 +4746,7 @@ main { padding-block: 24px 120px; }
       head('To review (0 when done)');
       const offRange = reconRows.length ? ref(SHEET.tb, `F${reconRows[0]}:F${reconRows[reconRows.length - 1]}`) : null;
       const offN = J.accts.filter(g => { const end = g.srcs[g.srcs.length - 1].endingCents; return end != null && (J.net.get(g.no) || 0) !== end; }).length;
-      line('Accounts whose books don\'t match the statement', offRange ? `SUMPRODUCT(ISNUMBER(${offRange})*(${offRange}<>0))` : '0', offN, SHEET.tb, { count: 1, check: 'warn' });
+      line('Accounts whose ending balance per books doesn\'t match the statement', offRange ? `SUMPRODUCT(ISNUMBER(${offRange})*(${offRange}<>0))` : '0', offN, SHEET.tb, { count: 1, check: 'warn' });
       line(`Transactions in ${UNC_IN} / ${UNC_OUT} (uncategorized)`, `COUNTIF(${GL_A},${UNC_IN})+COUNTIF(${GL_A},${UNC_OUT})`, B.unc, SHEET.gl, { count: 1, check: 'warn' });
       line('Accounts whose balance is more than 31 days older than the balance sheet', bsAsOf.crit ? `COUNTIFS(${bsAsOf.range},${bsAsOf.crit})` : '0', bsAsOf.n, SHEET.bs, { count: 1, check: 'warn' });   // P13-4
       // P13-2 (D78): balances on the wrong side of their normal balance (e.g. a loan repaid that was never booked), and money that
@@ -4095,11 +4793,14 @@ main { padding-block: 24px 120px; }
   // Test hook: only when the page URL carries ?stb-test (the test harness). The published page exposes nothing (D38).
   if (/[?&]stb-test\b/.test(location.search)) window.__stb = { APP_VERSION, state, commitRules, crossChecks, fileHash, go, STEPS, render, addFiles, detectKind, decodeText, tidyGrid, detectHeader, autoMap, validateMap, looksDate, looksMoney, parseMoney, parseDate, inferYear, fmtCents, buildTxns, reconcile, autoBalances,
     loadPdfjs, pdfLines, parsePdfLines, parsePdfSource, applyPdfSigns, resolvePdfSign, sectionOf, isPdfMoney, isPdfDate, pdfDate, statementPeriod,
-    syncSourceAccounts, coaAdd, coaEdit, coaDelete, taxLineOf, SCHED_LINES, DEFAULT_COA, compileRule, normDesc, categorize, matchTransfers, assignTxns, unlinkPair, reviewStats, filteredTxns, renderReview, suggestPattern,
+    syncSourceAccounts, coaAdd, coaEdit, coaDelete, taxLineOf, SCHED_LINES, DEFAULT_COA, compileRule, normDesc, categorize, matchTransfers, assignTxns, unlinkPair, reviewStats, filteredTxns, renderReview, renderCategorize, suggestPattern,
     buildJournal, booksOf, buildWorkbook, downloadWorkbook, prepareExport, workbookName, SHEET,
     setupData, parseSetup, applySetup, undoSetup, saveSetup, openSetupFile, SEED_RULES,
     importResult, applyImport, coaTypeOf, autoMapCoa, coaImportPlan, openCoaFile, applyCoaImport, companySlug,
-    linkSources, unlinkSource, groupOf, joinsOf, leadOf, groupStatus, isPeriods };
+    linkSources, unlinkSource, groupOf, joinsOf, leadOf, groupStatus, isPeriods,
+    nextAcctNo, defaultTaxLine,   // P14-3 (D85)
+    suggestions,   // P14-4 (D86)
+    catKey, catSig, catMatch, catPlan, catCtx, snapAll };   // P14-5 (D87)
 
   go((location.hash || '#upload').slice(1), { focus: false });
 })();
